@@ -31,6 +31,6 @@ ENV PYTHONPATH="/app/scripts:${PYTHONPATH}"
 COPY . /app
 
 # Expone el puerto donde corre Flask
-EXPOSE 5001
+EXPOSE ${PORT}
 
 CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "server:app"]
