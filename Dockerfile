@@ -1,16 +1,11 @@
-# Usa una imagen base de Python
-FROM python:3.9
+# Usa una imagen base de Selenium con Chrome
+FROM selenium/standalone-chrome:latest
 
-# Establece el directorio de trabajo en el contenedor
+# Cambia el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo requirements.txt desde scripts al contenedor
-COPY requirements.txt /app/requirements.txt
-
-# Instala python3-venv para crear entornos virtuales
-RUN apt-get update && \
-    apt-get install -y python3-venv && \
-    apt-get clean
+# Instala dependencias de Python para el backend
+RUN apt-get update && apt-get install -y python3-pip python3-venv && apt-get clean
 
 # Crea un entorno virtual en /opt/venv
 RUN python3 -m venv /opt/venv
@@ -18,7 +13,10 @@ RUN python3 -m venv /opt/venv
 # Activa el entorno virtual y actualiza pip
 RUN /opt/venv/bin/pip install --no-cache-dir --upgrade pip
 
-# Instala las dependencias dentro del entorno virtual
+# Copia el archivo requirements.txt al contenedor
+COPY requirements.txt /app/requirements.txt
+
+# Instala las dependencias en el entorno virtual
 RUN /opt/venv/bin/pip install --no-cache-dir -r /app/requirements.txt
 
 # Añade el entorno virtual al PATH
@@ -30,7 +28,11 @@ ENV PYTHONPATH="/app/scripts:${PYTHONPATH}"
 # Copia todo el código fuente al contenedor
 COPY . /app
 
-# Expone el puerto donde corre Flask
+# Exponer los puertos: 
+# - 4444: puerto interno de Selenium Grid
+# - 5002: puerto del backend
+EXPOSE 4444
 EXPOSE 5002
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5002", "server:app"]
+# Comando para correr tanto Selenium como el backend Flask
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:5002 server:app"]
