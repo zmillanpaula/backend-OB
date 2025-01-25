@@ -63,3 +63,18 @@ class SeleniumManager:
                 logging.warning(f"Error al cerrar el WebDriver: {e}")
             finally:
                 self.driver = None
+
+    def run(self, operation):
+        """
+        Ejecuta una operación con el WebDriver.
+        """
+        try:
+            # Inicializa el driver si no está activo
+            driver = self.start_driver()
+            return operation(driver)
+        except Exception as e:
+            logging.error(f"Error durante la operación Selenium: {e}")
+            raise
+        finally:
+            # Cierra el driver al final de la operación
+            self.quit_driver()
