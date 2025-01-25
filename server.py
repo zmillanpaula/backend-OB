@@ -135,6 +135,15 @@ def home():
 
 
 if __name__ == "__main__":
-    # Lee el puerto desde la variable de entorno PORT o usa 5001 como predeterminado
+    # Instancia de SeleniumManager para verificar el estado de Selenium Grid
+    selenium_manager = SeleniumManager()
+    if selenium_manager.is_grid_ready():
+        logging.info("✅ Selenium Grid está listo para aceptar conexiones.")
+    else:
+        logging.error("❌ Selenium Grid no está listo. Verifica la configuración.")
+        # Opcionalmente puedes detener el servidor si Selenium no está disponible.
+        exit(1)
+
+    # Lee el puerto desde la variable de entorno PORT o usa 5002 como predeterminado
     port = int(os.environ.get("PORT", 5002))
     app.run(host="0.0.0.0", port=port)
