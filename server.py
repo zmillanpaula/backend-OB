@@ -56,34 +56,35 @@ def guardar_seleccion():
 
 @app.route('/buscar_estudiante', methods=['POST'])
 def buscar_estudiante_endpoint():
-    global correo_global  # Declarar la variable global
+    global correo_global
     try:
+        logging.info("Endpoint /buscar_estudiante llamado.")
         username = "189572484"
         password = "Mp18957248-4"
         data = request.json
 
-        # Validar los campos requeridos
         correo = data.get('correo')
         monitor = data.get('monitor')
         if not all([correo, monitor]):
+            logging.error("Faltan campos requeridos: correo o monitor.")
             return jsonify({"error": "Correo y monitor son requeridos"}), 400
 
-        temp_storage["monitor"] = monitor
-        correo_global = correo
         logging.info(f"Monitor seleccionado: {monitor}")
-        logging.info(f"Correo almacenado: {correo_global}")
+        logging.info(f"Correo almacenado: {correo}")
 
-        # Realizar la búsqueda del estudiante
+        # Llamada a Selenium
         resultado = selenium_manager.run(
             lambda driver: login_y_buscar_estudiante(driver, username, password, correo)
         )
+        logging.info(f"Resultado Selenium: {resultado}")
+
         if "error" in resultado:
             return jsonify({"error": resultado["error"], "existe": resultado["existe"]}), 400
 
         return jsonify(resultado)
 
     except Exception as e:
-        logging.exception(f"Error en /buscar_estudiante: {e}")  # Incluye el stacktrace
+        logging.exception(f"Error en /buscar_estudiante: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
 
 

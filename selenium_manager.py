@@ -3,12 +3,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import logging
 import time
+import os
 
 
 class SeleniumManager:
-    def __init__(self, grid_url="http://selenium:4444/wd/hub"):
+    def __init__(self):
         self.driver = None
-        self.grid_url = grid_url
+        self.grid_url = os.getenv("SELENIUM_GRID_URL", "http://localhost:4444/wd/hub")  # Cambiado a localhost
 
     def start_driver(self):
         """
@@ -25,6 +26,7 @@ class SeleniumManager:
             options = Options()
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--headless")
             self.driver = webdriver.Remote(
                 command_executor=self.grid_url,
                 options=options,
