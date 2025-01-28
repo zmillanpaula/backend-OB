@@ -56,13 +56,15 @@ def guardar_seleccion():
 
 @app.route('/buscar_estudiante', methods=['POST'])
 def buscar_estudiante_endpoint():
-    global correo_global
+    global correo_global  # Variable para almacenar el correo temporalmente
+    global selenium_manager  # Instancia global de SeleniumManager
     try:
         logging.info("Endpoint /buscar_estudiante llamado.")
         username = "189572484"
         password = "Mp18957248-4"
         data = request.json
 
+        # Validar que los datos necesarios están presentes
         correo = data.get('correo')
         monitor = data.get('monitor')
         if not all([correo, monitor]):
@@ -72,14 +74,19 @@ def buscar_estudiante_endpoint():
         logging.info(f"Monitor seleccionado: {monitor}")
         logging.info(f"Correo almacenado: {correo}")
 
-        # Llamada a Selenium
-        resultado = selenium_manager.run(
-            lambda driver: login_y_buscar_estudiante(driver, username, password, correo)
-        )
+        # Reutiliza o inicializa el WebDriver
+        driver = selenium_manager.start_driver()
+
+        # Llama a la función de login y búsqueda del estudiante
+        resultado = login_y_buscar_estudiante(driver, username, password, correo)
         logging.info(f"Resultado Selenium: {resultado}")
 
+        # Si hay un error en la búsqueda, devuelve una respuesta con error
         if "error" in resultado:
             return jsonify({"error": resultado["error"], "existe": resultado["existe"]}), 400
+
+        # Guarda el correo para su uso en otros endpoints
+        correo_global = correo
 
         return jsonify(resultado)
 
@@ -87,13 +94,13 @@ def buscar_estudiante_endpoint():
         logging.exception(f"Error en /buscar_estudiante: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
 
-
 @app.route('/asignar_nivel', methods=['POST'])
 def asignar_nivel_endpoint():
     """
     Asigna un nivel básico al estudiante.
     """
     global correo_global
+    global selenium_manager
     try:
         data = request.json
         nivel = data.get('nivel')
@@ -102,32 +109,23 @@ def asignar_nivel_endpoint():
             return jsonify({"error": "Faltan datos requeridos"}), 400
 
         logging.info(f"Asignando nivel {nivel} al correo {correo_global}...")
-        resultado = selenium_manager.run(
-            lambda driver: asignar_nivel_campus(driver, correo_global, nivel)
-        )
-        logging.info(f"Resultado de asignación: {resultado}")
+        driver = selenium_manager.start_driver()
+        resultado = asignar_nivel_campus(driver, correo_global, nivel)
+        
         return jsonify(resultado)
     except Exception as e:
         logging.error(f"Error en /asignar_nivel: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
-    """
-    Limpia la sesión de Selenium.
-    """
-    global correo_global, temp_storage
+    global selenium_manager
     try:
-        selenium_manager.reset_session()
-        correo_global = None
-        temp_storage = {"monitor": None}
-        logging.info("Sesión de Selenium limpiada correctamente.")
-        return jsonify({"message": "Sesión limpiada con éxito"}), 200
+        selenium_manager.quit_driver()
+        return jsonify({"message": "Sesión de Selenium cerrada con éxito"}), 200
     except Exception as e:
-        logging.error(f"Error al limpiar sesión: {e}", exc_info=True)
-        return jsonify({"error": "Error al limpiar sesión"}), 500
-
+        logging.exception(f"Error al limpiar la sesión: {e}")
+        return jsonify({"error": "Error al limpiar la sesión"}), 500
 
 @app.route('/', methods=['GET'])
 def home():

@@ -10,6 +10,52 @@ class SeleniumManager:
         self.driver = None
         self.grid_url = grid_url or os.environ.get("SELENIUM_GRID_URL", "http://localhost:4444/wd/hub")
 
+    def start_driver(self):
+        """
+        Inicializa el WebDriver o reutiliza el existente.
+        """
+        if self.driver:
+            try:
+                # Verifica si el driver sigue vivo
+                self.driver.title  # Una operación sencilla para validar el estado
+                logging.info("WebDriver está activo y reutilizable.")
+                return self.driver
+            except Exception as e:
+                logging.warning(f"WebDriver no está disponible. Reiniciando: {e}")
+                self.driver = None
+
+        # Si el driver no está inicializado, verifica si Selenium Grid está listo
+        if not self.is_grid_ready():
+            raise Exception("Selenium Grid no está listo.")
+
+        try:
+            options = Options()
+            options.add_argument("--headless")  # Opcional: Remover si necesitas ver el navegador
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            self.driver = webdriver.Remote(
+                command_executor=self.grid_url,
+                options=options
+            )
+            logging.info("WebDriver inicializado correctamente.")
+            return self.driver
+        except Exception as e:
+            logging.error(f"Error al iniciar el WebDriver: {e}")
+            raise
+
+    def quit_driver(self):
+        """
+        Cierra y elimina el WebDriver manualmente.
+        """
+        if self.driver:
+            try:
+                self.driver.quit()
+                logging.info("WebDriver cerrado correctamente.")
+            except Exception as e:
+                logging.warning(f"Error al cerrar el WebDriver: {e}")
+            finally:
+                self.driver = None
+
     def is_grid_ready(self):
         """
         Comprueba si Selenium Grid está listo para recibir sesiones.
@@ -25,57 +71,3 @@ class SeleniumManager:
         except requests.RequestException as e:
             logging.error(f"Error al verificar Selenium Grid: {e}")
             return False
-
-    def start_driver(self):
-        """
-        Inicializa el WebDriver si el Grid está listo.
-        """
-        if self.driver:
-            logging.info("WebDriver ya está activo.")
-            return self.driver
-
-        if not self.is_grid_ready():
-            raise Exception("Selenium Grid no está listo.")
-
-        try:
-            options = Options()
-            options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-            self.driver = webdriver.Remote(
-                command_executor=self.grid_url,
-                options=options
-            )
-            logging.info("WebDriver inicializado correctamente.")
-            return self.driver
-        except Exception as e:
-            logging.error(f"Error al iniciar el WebDriver: {e}")
-            raise
-
-    def quit_driver(self):
-        """
-        Cierra y elimina el WebDriver.
-        """
-        if self.driver:
-            try:
-                self.driver.quit()
-                logging.info("WebDriver cerrado correctamente.")
-            except Exception as e:
-                logging.warning(f"Error al cerrar el WebDriver: {e}")
-            finally:
-                self.driver = None
-
-    def run(self, operation):
-        """
-        Ejecuta una operación con el WebDriver.
-        """
-        try:
-            # Inicializa el driver si no está activo
-            driver = self.start_driver()
-            return operation(driver)
-        except Exception as e:
-            logging.error(f"Error durante la operación Selenium: {e}")
-            raise
-        finally:
-            # Cierra el driver al final de la operación
-            self.quit_driver()
