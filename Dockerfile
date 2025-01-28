@@ -22,4 +22,4 @@ COPY . /app
 EXPOSE 5002
 
 # Comando para correr el backend Flask con gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5002", "server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5002", "--timeout", "120", "server:app"]
