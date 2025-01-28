@@ -5,9 +5,9 @@ import requests
 
 
 class SeleniumManager:
-    def __init__(self, grid_url="http://localhost:4444/wd/hub"):
+    def __init__(self, grid_url=None):
         self.driver = None
-        self.grid_url = grid_url
+        self.grid_url = grid_url or os.environ.get("SELENIUM_GRID_URL", "http://localhost:4444/wd/hub")
 
     def is_grid_ready(self):
         """
