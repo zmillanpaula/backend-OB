@@ -3,7 +3,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from selenium_manager import tomar_screenshot  
+from selenium_manager import tomar_screenshot 
+import selenium_manager
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
@@ -20,6 +21,12 @@ def asignar_nivel_avanzado(driver, correo, nivel):
         for week in range(1, 13):  # Iterar de Week 01 a Week 12
             week_str = f"{nivel} Week {week:02d}"
             logging.info(f"Buscando el nivel '{week_str}'")
+            
+            try:
+               driver.current_window_handle  # Intenta acceder a la sesión actual
+            except:
+                logging.warning("⚠️ Sesión de Selenium perdida. Reiniciando WebDriver...")
+                driver = selenium_manager.start_driver()  # Reinicia el driver
 
             try:
                 # Buscar el nivel
