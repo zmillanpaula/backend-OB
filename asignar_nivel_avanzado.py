@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from .selenium_manager import tomar_screenshot  
+from selenium_manager import tomar_screenshot  
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
