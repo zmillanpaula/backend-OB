@@ -73,17 +73,16 @@ class SeleniumManager:
             logging.error(f"Error al verificar Selenium Grid: {e}")
             return False
         
-        
-    def tomar_screenshot(driver, nombre="error"):
-        """
-        Captura una pantalla del navegador y la guarda en /app/screenshots/.
-        """
-        timestamp = time.strftime("%Y%m%d-%H%M%S")
-        directorio = "/app/screenshots"
-        if not os.path.exists(directorio):
-           os.makedirs(directorio)  # Crea la carpeta si no existe
 
-        ruta = f"{directorio}/{nombre}_{timestamp}.png"
-        driver.save_screenshot(ruta)
-        print(f"📸 Screenshot guardado en: {ruta}")
-        return ruta
+    def tomar_screenshot(driver, filename):
+        """
+    Captura una captura de pantalla y la guarda en la carpeta 'screenshots'.
+    """
+        try:
+            screenshots_dir = "screenshots"
+            os.makedirs(screenshots_dir, exist_ok=True)  # Crea la carpeta si no existe
+            filepath = os.path.join(screenshots_dir, f"{filename}.png")
+            driver.save_screenshot(filepath)
+            logging.info(f"✅ Captura de pantalla guardada: {filepath}")
+        except Exception as e:
+            logging.error(f"❌ Error al tomar captura de pantalla: {e}")
