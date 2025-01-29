@@ -122,7 +122,8 @@ def asignar_nivel_avanzado_endpoint():
     """
     Endpoint para asignar un nivel avanzado a un estudiante en Campus Virtual.
     """
-    global selenium_manager  # Usamos la misma instancia de Selenium
+    global selenium_manager
+    global correo_global
     
     try:
         data = request.json
@@ -135,9 +136,9 @@ def asignar_nivel_avanzado_endpoint():
         logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}...")
 
         # Llamamos a Selenium para asignar nivel
-        resultado = selenium_manager.run(
-            lambda driver: asignar_nivel_avanzado(driver, nivel)
-        )
+        driver = selenium_manager.start_driver()
+        resultado = asignar_nivel_avanzado(driver, correo_global, nivel)
+        
 
         logging.info(f"Resultado asignación avanzada: {resultado}")
         return jsonify(resultado)
