@@ -117,6 +117,35 @@ def asignar_nivel_endpoint():
         logging.error(f"Error en /asignar_nivel: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
+@app.route('/asignar_nivel_avanzado', methods=['POST'])
+def asignar_nivel_avanzado_endpoint():
+    """
+    Endpoint para asignar un nivel avanzado a un estudiante en Campus Virtual.
+    """
+    global selenium_manager  # Usamos la misma instancia de Selenium
+    
+    try:
+        data = request.json
+        correo = data.get('correo')
+        nivel = data.get('nivel')
+
+        if not correo or not nivel:
+            return jsonify({"error": "Correo y nivel son requeridos"}), 400
+
+        logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}...")
+
+        # Llamamos a Selenium para asignar nivel
+        resultado = selenium_manager.run(
+            lambda driver: asignar_nivel_avanzado(driver, nivel)
+        )
+
+        logging.info(f"Resultado asignación avanzada: {resultado}")
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.error(f"Error en /asignar_nivel_avanzado: {e}", exc_info=True)
+        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
+
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
     global selenium_manager
