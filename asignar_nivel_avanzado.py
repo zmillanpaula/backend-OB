@@ -3,17 +3,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from activeCampaignService import get_contact
 
-def asignar_nivel_avanzado(driver, nivel):
+def asignar_nivel_avanzado(driver, correo, nivel):
+    """
+    Asigna un nivel avanzado a un estudiante en Campus Virtual.
+    """
     try:
-        # Recuperar correo almacenado en sessionStorage
-        logging.info("Obteniendo correo del estudiante desde sessionStorage.")
-        correo = driver.execute_script("return sessionStorage.getItem('correo_estudiante');")
-        if not correo:
-            raise ValueError("No se encontró el correo en sessionStorage. Verifica el flujo de búsqueda.")
-
-        logging.info(f"Correo recuperado: {correo}")
+        logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}.")
 
         # Navegar a "Cohortes"
         logging.info("Navegando a 'Cohortes'")
@@ -87,5 +83,3 @@ def asignar_nivel_avanzado(driver, nivel):
     except Exception as e:
         logging.error(f"Error en la asignación de nivel avanzado: {e}")
         return {"error": str(e)}
-
-    

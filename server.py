@@ -122,8 +122,7 @@ def asignar_nivel_avanzado_endpoint():
     """
     Endpoint para asignar un nivel avanzado a un estudiante en Campus Virtual.
     """
-    global selenium_manager
-    global correo_global
+    global selenium_manager, correo_global
     
     try:
         data = request.json
