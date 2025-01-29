@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 import logging
 import requests
 import os
+import time
 
 
 class SeleniumManager:
@@ -71,3 +72,18 @@ class SeleniumManager:
         except requests.RequestException as e:
             logging.error(f"Error al verificar Selenium Grid: {e}")
             return False
+        
+        
+    def tomar_screenshot(driver, nombre="error"):
+        """
+        Captura una pantalla del navegador y la guarda en /app/screenshots/.
+        """
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        directorio = "/app/screenshots"
+        if not os.path.exists(directorio):
+           os.makedirs(directorio)  # Crea la carpeta si no existe
+
+        ruta = f"{directorio}/{nombre}_{timestamp}.png"
+        driver.save_screenshot(ruta)
+        print(f"📸 Screenshot guardado en: {ruta}")
+        return ruta

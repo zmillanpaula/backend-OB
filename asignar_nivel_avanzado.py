@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
+from selenium_manager import tomar_screenshot  # 🔹 Importamos la función desde selenium_manager.py
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
@@ -59,6 +60,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
                 if "Ningún usuario coincide" in label_text:
                     logging.warning(f"No se encontró el usuario con correo {correo} en '{week_str}'")
+                    tomar_screenshot(driver, f"usuario_no_encontrado_{week_str}")  # 🔹 Captura en caso de error
                     results.append({"week": week_str, "result": "Usuario no encontrado"})
                 else:
                     user_option = optgroup.find_element(By.TAG_NAME, "option")
@@ -71,7 +73,8 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
                     results.append({"week": week_str, "result": "Asignación exitosa"})
             except Exception as e:
-                logging.error(f"Error asignando '{week_str}': {e}")
+                logging.error(f"❌ Error asignando '{week_str}': {e}")
+                tomar_screenshot(driver, f"error_asignacion_{week_str}")  # 🔹 Captura en caso de error
                 results.append({"week": week_str, "result": f"Error: {str(e)}"})
 
             # Navegar de vuelta a "Cohortes"
@@ -81,5 +84,6 @@ def asignar_nivel_avanzado(driver, correo, nivel):
         return {"message": "Asignación avanzada completada.", "details": results}
 
     except Exception as e:
-        logging.error(f"Error en la asignación de nivel avanzado: {e}")
+        logging.error(f"❌ Error en la asignación de nivel avanzado: {e}")
+        tomar_screenshot(driver, "error_general_asignacion")  # 🔹 Captura en caso de error general
         return {"error": str(e)}
