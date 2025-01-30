@@ -31,6 +31,10 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 logging.warning("⚠️ Sesión de Selenium perdida. Reiniciando WebDriver...")
                 driver = selenium_manager.start_driver()  # 🔄 Reiniciar WebDriver y mantener login activo
 
+                # Volver a la página de Cohortes tras reiniciar
+                driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
+                time.sleep(5)  # 🔹 Esperar para evitar problemas de carga
+
             try:
                 # 🔹 Buscar el nivel
                 search_input = WebDriverWait(driver, 10).until(
@@ -90,7 +94,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
             # 🔄 Volver a la página de Cohortes antes de la siguiente iteración
             driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
-            time.sleep(2)
+            time.sleep(5)  # 🔹 Agregamos más tiempo de espera para evitar saturación
 
         return {"message": "✅ Asignación avanzada completada.", "details": resultados}
 
