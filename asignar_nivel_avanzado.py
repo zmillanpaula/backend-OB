@@ -3,30 +3,32 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from selenium_manager import tomar_screenshot 
-import selenium_manager
+from selenium_manager import tomar_screenshot, SeleniumManager  # ✅ Importación corregida
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
     Asigna un nivel avanzado a un estudiante en Campus Virtual.
     """
     try:
-        logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}.")
+        logging.info(f"🚀 Iniciando asignación avanzada para {correo} en nivel {nivel}.")
 
         # Navegar a "Cohortes"
-        logging.info("Navegando a 'Cohortes'")
+        logging.info("🌍 Navegando a 'Cohortes'")
         driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
 
         results = []
-        for week in range(1, 13):  # Iterar de Week 01 a Week 12
+        for week in range(1, 13):  # 🔹 Iterar de Week 01 a Week 12
             week_str = f"{nivel} Week {week:02d}"
-            logging.info(f"Buscando el nivel '{week_str}'")
-            
+            logging.info(f"🔍 Buscando el nivel '{week_str}'")
+
+            # 🔹 Verifica si la sesión de Selenium sigue activa
             try:
-               driver.current_window_handle  # Intenta acceder a la sesión actual
-            except:
-                logging.warning("⚠️ Sesión de Selenium perdida. Reiniciando WebDriver...")
-                driver = selenium_manager.start_driver()  # Reinicia el driver
+                driver.current_window_handle  # Intenta acceder a la sesión
+            except Exception:
+                logging.warning("⚠️ Sesión de Selenium perdida. Capturando pantalla y reiniciando WebDriver...")
+                tomar_screenshot(driver, f"sesion_perdida_{week_str}")  # Captura antes de reiniciar
+                selenium_manager = SeleniumManager()  # 🔹 Crear una nueva instancia de SeleniumManager
+                driver = selenium_manager.start_driver()  # 🔹 Reiniciar WebDriver
 
             try:
                 # Buscar el nivel
@@ -66,7 +68,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 label_text = optgroup.get_attribute("label")
 
                 if "Ningún usuario coincide" in label_text:
-                    logging.warning(f"No se encontró el usuario con correo {correo} en '{week_str}'")
+                    logging.warning(f"⚠️ No se encontró el usuario con correo {correo} en '{week_str}'")
                     tomar_screenshot(driver, f"usuario_no_encontrado_{week_str}")  # 🔹 Captura en caso de error
                     results.append({"week": week_str, "result": "Usuario no encontrado"})
                 else:
@@ -78,7 +80,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                     )
                     add_button.click()
 
-                    results.append({"week": week_str, "result": "Asignación exitosa"})
+                    results.append({"week": week_str, "result": "✅ Asignación exitosa"})
             except Exception as e:
                 logging.error(f"❌ Error asignando '{week_str}': {e}")
                 tomar_screenshot(driver, f"error_asignacion_{week_str}")  # 🔹 Captura en caso de error
@@ -88,7 +90,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
             driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
             time.sleep(2)
 
-        return {"message": "Asignación avanzada completada.", "details": results}
+        return {"message": "✅ Asignación avanzada completada.", "details": results}
 
     except Exception as e:
         logging.error(f"❌ Error en la asignación de nivel avanzado: {e}")

@@ -56,42 +56,41 @@ def guardar_seleccion():
 
 @app.route('/buscar_estudiante', methods=['POST'])
 def buscar_estudiante_endpoint():
-    global correo_global  # Variable para almacenar el correo temporalmente
-    global selenium_manager  # Instancia global de SeleniumManager
-    try:
-        logging.info("Endpoint /buscar_estudiante llamado.")
-        username = "189572484"
-        password = "Mp18957248-4"
-        data = request.json
+    global correo_global, selenium_manager  
 
-        # Validar que los datos necesarios están presentes
+    try:
+        logging.info("📌 Endpoint /buscar_estudiante llamado.")
+
+        data = request.json
         correo = data.get('correo')
         monitor = data.get('monitor')
+
         if not all([correo, monitor]):
-            logging.error("Faltan campos requeridos: correo o monitor.")
+            logging.error("⚠️ Faltan campos requeridos: correo o monitor.")
             return jsonify({"error": "Correo y monitor son requeridos"}), 400
 
-        logging.info(f"Monitor seleccionado: {monitor}")
-        logging.info(f"Correo almacenado: {correo}")
+        logging.info(f"👤 Monitor seleccionado: {monitor}")
+        logging.info(f"📧 Correo ingresado: {correo}")
 
-        # Reutiliza o inicializa el WebDriver
+        # 🔹 Obtener WebDriver activo o iniciar uno nuevo (login automático si es necesario)
         driver = selenium_manager.start_driver()
 
-        # Llama a la función de login y búsqueda del estudiante
-        resultado = login_y_buscar_estudiante(driver, username, password, correo)
-        logging.info(f"Resultado Selenium: {resultado}")
+        # 🔹 Buscar estudiante en el sistema
+        resultado = login_y_buscar_estudiante(driver, correo)
 
-        # Si hay un error en la búsqueda, devuelve una respuesta con error
+        # 🔹 Manejo de errores en la búsqueda
         if "error" in resultado:
+            logging.warning(f"❌ Error en búsqueda: {resultado['error']}")
             return jsonify({"error": resultado["error"], "existe": resultado["existe"]}), 400
 
-        # Guarda el correo para su uso en otros endpoints
+        # 🔹 Si el estudiante fue encontrado, guardamos el correo globalmente
         correo_global = correo
+        logging.info(f"✅ Estudiante encontrado: {resultado}")
 
         return jsonify(resultado)
 
     except Exception as e:
-        logging.exception(f"Error en /buscar_estudiante: {e}")
+        logging.exception(f"❌ Error en /buscar_estudiante: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
 
 @app.route('/asignar_nivel', methods=['POST'])
