@@ -2,7 +2,7 @@ import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from selenium_manager import SeleniumManager
-from buscar_estudiante import login_y_buscar_estudiante
+from buscar_estudiante import buscar_estudiante
 from asignar_nivel import asignar_nivel_campus
 import logging
 from cerrar_onboarding import cerrar_onboarding_form
@@ -76,7 +76,7 @@ def buscar_estudiante_endpoint():
         driver = selenium_manager.start_driver()
 
         # 🔹 Buscar estudiante en el sistema
-        resultado = login_y_buscar_estudiante(driver, correo)
+        resultado = buscar_estudiante(driver, correo)
 
         # 🔹 Manejo de errores en la búsqueda
         if "error" in resultado:
