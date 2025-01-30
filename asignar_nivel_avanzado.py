@@ -8,16 +8,13 @@ import selenium_manager
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
-    Asigna un nivel avanzado a un estudiante en Campus Virtual, dividiendo la asignación en bloques.
+    Asigna un nivel avanzado a un estudiante en Campus Virtual.
     """
     try:
         logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}.")
-
         driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
 
         results = []
-        semanas_asignadas = 0  # Contador para saber cuántas semanas se han procesado
-
         for week in range(1, 13):  # Iterar de Week 01 a Week 12
             week_str = f"{nivel} Week {week:02d}"
             logging.info(f"🔎 Buscando nivel: {week_str}")
@@ -67,6 +64,22 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 optgroup = user_select.find_element(By.TAG_NAME, "optgroup")
                 label_text = optgroup.get_attribute("label")
 
+                # 🔹 Validar si el usuario ya está asignado
+                existing_email_input = driver.find_element(By.ID, "removeselect_searchtext")
+                existing_email_input.clear()
+                existing_email_input.send_keys(correo)
+                time.sleep(2)  # Permitir que la lista se actualice
+
+                existing_user_select = driver.find_element(By.ID, "removeselect")
+                existing_optgroup = existing_user_select.find_element(By.TAG_NAME, "optgroup")
+                existing_label_text = existing_optgroup.get_attribute("label")
+
+                if "Ningún usuario coincide" not in existing_label_text:
+                    logging.info(f"✅ El usuario {correo} ya está asignado a {week_str}.")
+                    results.append({"week": week_str, "result": "Ya asignado"})
+                    continue  # Ir a la siguiente semana
+
+                # Si no está asignado, lo agregamos
                 if "Ningún usuario coincide" in label_text:
                     logging.warning(f"❌ No se encontró el usuario con correo {correo} en '{week_str}'")
                     tomar_screenshot(driver, f"usuario_no_encontrado_{week_str}")
@@ -82,14 +95,6 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
                     logging.info(f"✅ Usuario {correo} asignado a {week_str}.")
                     results.append({"week": week_str, "result": "Asignación exitosa"})
-                    semanas_asignadas += 1
-
-                # 🔹 Reinicia WebDriver cada 3 semanas para evitar crasheo
-                if semanas_asignadas % 3 == 0:
-                    logging.info("🔄 Reiniciando WebDriver después de 3 semanas...")
-                    driver.quit()
-                    driver = selenium_manager.start_driver()
-                    driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
 
             except Exception as e:
                 logging.error(f"❌ Error asignando '{week_str}': {e}")
