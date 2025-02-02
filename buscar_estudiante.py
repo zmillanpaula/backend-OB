@@ -30,7 +30,7 @@ def obtener_monitores():
 
     except Exception as e:
         logging.error(f"❌ Error al obtener monitores: {e}")
-        return [] 
+        return []
 
 def buscar_estudiante(driver, correo):
     """
@@ -38,13 +38,6 @@ def buscar_estudiante(driver, correo):
     """
     try:
         logging.info(f"🔍 Buscando estudiante con correo: {correo}")
-
-        # 🔹 Verificar si la sesión sigue activa
-        try:
-            driver.current_window_handle  # Intenta acceder a la sesión actual
-        except:
-            logging.warning("⚠️ Sesión de Selenium perdida. Reiniciando WebDriver...")
-            return {"error": "Sesión de Selenium perdida. Intenta nuevamente.", "existe": False}
 
         # 🔹 Navegar a la búsqueda de usuarios
         driver.get("https://campusvirtual.bestwork.cl/admin/user.php")
