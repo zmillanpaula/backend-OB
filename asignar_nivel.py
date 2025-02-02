@@ -12,26 +12,20 @@ def asignar_nivel_campus(driver, correo, nivel):
     try:
         logging.info(f"🚀 Iniciando asignación de nivel '{nivel}' para {correo}.")
 
-        # Verifica si la sesión de Selenium sigue activa
-        try:
-            driver.current_window_handle  # Accede a la sesión actual
-        except Exception:
-            logging.warning("⚠️ Sesión de Selenium perdida. Capturando pantalla y reiniciando WebDriver...")
-            tomar_screenshot(driver, "sesion_perdida_asignar_nivel")  # 🔹 Captura antes de reiniciar
-            selenium_manager = SeleniumManager()  # 🔹 Crear nueva instancia de SeleniumManager
-            driver = selenium_manager.start_driver()  # 🔹 Reiniciar WebDriver
+        # 🔹 Formatear el nivel con "Nivel X" antes de buscarlo
+        nivel_busqueda = f"Nivel {nivel}"
+        logging.info(f"🔍 Buscando el nivel: {nivel_busqueda}")
 
         # Navegar a "Cohortes"
         logging.info("🌍 Navegando a 'Cohortes'")
         driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
 
         # Buscar el nivel
-        logging.info(f"🔍 Buscando el nivel '{nivel}'")
         search_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='search']"))
         )
         search_input.clear()
-        search_input.send_keys(nivel)
+        search_input.send_keys(nivel_busqueda)
 
         search_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btn-submit.search-icon"))
