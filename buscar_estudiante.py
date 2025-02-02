@@ -30,7 +30,7 @@ def obtener_monitores():
 
     except Exception as e:
         logging.error(f"❌ Error al obtener monitores: {e}")
-        return []
+        return [] 
 
 def buscar_estudiante(driver, correo):
     """
