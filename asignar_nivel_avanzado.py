@@ -15,11 +15,11 @@ def asignar_nivel_avanzado(driver, correo, nivel):
     try:
         logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}.")
 
-        # Asegurar que el WebDriver esté activo (sin validaciones redundantes)
+        # 🔹 Asegurar que el WebDriver esté activo
         driver = selenium_manager.start_driver()
 
-        # Navegar a "Cohortes"
-        logging.info("🔄 Navegando a 'Cohortes'")
+        # 🔄 Navegar a "Cohortes"
+        logging.info("🌍 Navegando a 'Cohortes'")
         driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
 
         results = []
@@ -28,7 +28,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
             logging.info(f"🔎 Buscando nivel: {week_str}")
 
             try:
-                # Buscar el nivel
+                # 🔹 Buscar el nivel
                 search_input = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='search']"))
                 )
@@ -44,13 +44,13 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                     EC.presence_of_element_located((By.CSS_SELECTOR, "i.icon.fa.fa-users"))
                 )
 
-                # Seleccionar el primer resultado
+                # 🔹 Seleccionar el primer resultado
                 first_result_icon = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "i.icon.fa.fa-users"))
                 )
                 first_result_icon.click()
 
-                # Buscar al estudiante y asignarlo
+                # 🔹 Buscar al estudiante y asignarlo
                 email_input = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, "addselect_searchtext"))
                 )
@@ -85,9 +85,9 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 tomar_screenshot(driver, f"error_asignacion_{week_str}")  # 🔹 Captura en caso de error
                 results.append({"week": week_str, "result": f"Error: {str(e)}"})
 
-            # 🔄 Navegar de vuelta a "Cohortes"
+            # 🔄 Navegar de vuelta a "Cohortes" con pausa para evitar saturación del Grid
             driver.get("https://campusvirtual.bestwork.cl/cohort/index.php")
-            time.sleep(2)
+            time.sleep(3)  # ⏳ Espera antes de la siguiente iteración
 
         return {"message": "✅ Asignación avanzada completada.", "details": results}
 
