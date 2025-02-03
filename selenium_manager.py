@@ -40,6 +40,16 @@ class SeleniumManager:
             options.add_argument("--ignore-certificate-errors")  # 🔹 Ignora errores SSL
             options.add_argument("--allow-insecure-localhost")  # 🔹 Permite conexiones inseguras locales
             options.add_argument("--disable-blink-features=AutomationControlled")  # 🔹 Evita detección de Selenium
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1280x800")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-infobars")
+            options.add_argument("--single-process")
+            options.add_argument("--disable-breakpad")
+            options.add_argument("--disable-crash-reporter")
+            options.add_argument("--disable-logging")
+            
+            
 
             self.driver = webdriver.Remote(command_executor=self.grid_url, options=options)
             logging.info("🔄 WebDriver reiniciado.")
