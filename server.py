@@ -125,7 +125,7 @@ def asignar_nivel_avanzado_endpoint():
     
     try:
         data = request.json
-        correo = data.get('correo')
+        correo = data.get('correo') or correo_global
         nivel = data.get('nivel')
 
         if not correo or not nivel:

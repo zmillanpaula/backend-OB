@@ -37,6 +37,9 @@ class SeleniumManager:
             options.add_argument("--headless")  # Opcional: remover si necesitas ver el navegador
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--ignore-certificate-errors")  # 🔹 Ignora errores SSL
+            options.add_argument("--allow-insecure-localhost")  # 🔹 Permite conexiones inseguras locales
+            options.add_argument("--disable-blink-features=AutomationControlled")  # 🔹 Evita detección de Selenium
 
             self.driver = webdriver.Remote(command_executor=self.grid_url, options=options)
             logging.info("🔄 WebDriver reiniciado.")
