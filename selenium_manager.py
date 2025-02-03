@@ -29,8 +29,8 @@ class SeleniumManager:
                 self.driver = None
 
         # Verifica si Selenium Grid está disponible antes de iniciar el WebDriver
-        if not self.is_grid_ready():
-            raise Exception("❌ Selenium Grid no está listo.")
+       # if not self.is_grid_ready():
+        #    raise Exception("❌ Selenium Grid no está listo.")
 
         try:
             options = Options()
