@@ -2,35 +2,6 @@ import logging
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from activeCampaignService import get_contact
-
-def obtener_monitores():
-    """
-    Obtiene la lista de monitores (campo personalizado con ID 149) desde ActiveCampaign.
-    """
-    logging.info("📡 Consultando monitores desde ActiveCampaign...")
-    
-    campo_monitor_id = "149"
-    monitores = []
-    
-    try:
-        contacto = get_contact("dummy@example.com")  # 🔹 Consulta un contacto para obtener la lista
-        
-        if not contacto or not contacto.get("fieldValues"):
-            logging.warning("⚠️ No se encontraron valores personalizados para los monitores.")
-            return []
-
-        monitores = set()
-        for field in contacto.get("fieldValues", []):
-            if field.get("field") == campo_monitor_id:
-                monitores.add(field.get("value", "").strip())
-
-        logging.info(f"✅ Monitores obtenidos: {monitores}")
-        return list(monitores)
-
-    except Exception as e:
-        logging.error(f"❌ Error al obtener monitores: {e}")
-        return []
 
 def buscar_estudiante(driver, correo):
     """
@@ -74,17 +45,7 @@ def buscar_estudiante(driver, correo):
 
         if correo == correo_encontrado:
             logging.info(f"👤 Estudiante encontrado: {nombre}, {correo_encontrado}")
-
-            # 🔹 Almacenar correo en sessionStorage
-            logging.info("📌 Guardando correo en sessionStorage...")
-            driver.execute_script(f"sessionStorage.setItem('correo_estudiante', '{correo}');")
-
-            # 🔹 Obtener y almacenar monitores
-            monitores = obtener_monitores()
-            driver.execute_script(f"sessionStorage.setItem('monitores', JSON.stringify({monitores}));")
-            logging.info(f"✅ Monitores almacenados temporalmente: {monitores}")
-
-            return {"nombre": nombre, "correo": correo_encontrado, "existe": True, "monitores": monitores}
+            return {"nombre": nombre, "correo": correo_encontrado, "existe": True}
         
         else:
             logging.info("⚠️ No se encontró el estudiante.")
@@ -93,3 +54,7 @@ def buscar_estudiante(driver, correo):
     except Exception as e:
         logging.error(f"❌ Error en la búsqueda del estudiante: {e}")
         return {"error": str(e), "existe": False}
+    
+    finally:
+        logging.info("Cerrando webdriver")
+        driver.quit()
