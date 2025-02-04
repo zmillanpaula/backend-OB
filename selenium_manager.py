@@ -30,7 +30,8 @@ class SeleniumManager:
 
         try:
             options = Options()
-            # ❌ No incluir "--headless" para permitir visualizarlo en noVNC
+            
+            options.add_argument("--headless")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--ignore-certificate-errors")
@@ -45,6 +46,8 @@ class SeleniumManager:
             options.add_argument("--disable-crash-reporter")
             options.add_argument("--disable-logging")
             options.add_argument("--disable-features=NetworkService")  # 🔹 Evita problemas de red en Railway
+            options.add_argument("--disable-dev-shm-usage")  # Evita usar `/dev/shm`
+            options.add_argument("--disable-features=VizDisplayCompositor") # Reduce uso gráfico
 
             # 🚀 Inicia el WebDriver con las opciones configuradas
             self.driver = webdriver.Remote(command_executor=self.grid_url, options=options)
