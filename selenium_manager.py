@@ -44,6 +44,7 @@ class SeleniumManager:
             options.add_argument("--disable-breakpad")
             options.add_argument("--disable-crash-reporter")
             options.add_argument("--disable-logging")
+            options.add_argument("--disable-features=NetworkService")  # 🔹 Evita problemas de red en Railway
 
             # 🚀 Inicia el WebDriver con las opciones configuradas
             self.driver = webdriver.Remote(command_executor=self.grid_url, options=options)
