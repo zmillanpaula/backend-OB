@@ -178,5 +178,5 @@ if __name__ == "__main__":
         exit(1)
 
     # Lee el puerto desde la variable de entorno PORT o usa 5002 como predeterminado
-    port = int(os.environ.get("PORT", 5002))
+    port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
