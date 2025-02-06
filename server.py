@@ -11,6 +11,7 @@ from extraer_licencia import extraer_licencia_cambridge_sheets
 from asignar_nivel_cambridge import asignar_estudiante_cambridge
 from activeCampaignService import obtener_opciones_campo
 import os
+import requests
 
 # Configuración inicial
 sys.path.append('/app/scripts')
@@ -23,6 +24,7 @@ selenium_manager = SeleniumManager()  # Instancia global para manejar la sesión
 # Variables globales para almacenar temporalmente datos
 correo_global = None
 temp_storage = {"monitor": None}
+estado_asignaciones = {} 
 
 # Configuración de logs
 logging.basicConfig(level=logging.INFO)
@@ -144,6 +146,12 @@ def asignar_nivel_avanzado_endpoint():
             return jsonify({"error": "No se pudo iniciar el WebDriver. Verifica Selenium Grid."}), 500
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
+        
+        requests.post("https://backend-ob1-112160689786.us-west1.run.app/actualizar_estado", json={
+            "correo": correo,
+            "completado": True,
+            "details": resultado.get("details", [])
+        })
 
         logging.info(f"✅ Resultado asignación avanzada: {resultado}")
         return jsonify(resultado)
@@ -161,6 +169,37 @@ def limpiar_sesion():
     except Exception as e:
         logging.exception(f"Error al limpiar la sesión: {e}")
         return jsonify({"error": "Error al limpiar la sesión"}), 500
+
+@app.route('/estado_asignacion', methods=['GET'])
+def estado_asignacion():
+    """
+    Devuelve el estado actual de la asignación para un correo específico.
+    """
+    correo = request.args.get("correo")
+    if not correo:
+        return jsonify({"error": "Correo no proporcionado"}), 400
+
+    estado = estado_asignaciones.get(correo, {"completado": False})  # Default: False
+    return jsonify(estado)
+
+
+@app.route('/actualizar_estado', methods=['POST'])
+def actualizar_estado():
+    """
+    Actualiza el estado de la asignación cuando Selenium finaliza.
+    """
+    data = request.get_json()
+    correo = data.get("correo")
+    completado = data.get("completado", False)
+    detalles = data.get("details", [])
+
+    if not correo:
+        return jsonify({"error": "Correo no proporcionado"}), 400
+
+    estado_asignaciones[correo] = {"completado": completado, "details": detalles}
+    
+    logging.info(f"✅ Estado actualizado: {estado_asignaciones[correo]}")
+    return jsonify({"message": "Estado actualizado correctamente"})    
 
 @app.route('/', methods=['GET'])
 def home():
