@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from datetime import datetime
 from googleapiclient.discovery import build
@@ -8,21 +9,18 @@ from activeCampaignService import get_contact
 
 # Configuración para Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SPREADSHEET_ID = '1eKaY8XoEzySnzhlATc5alVuCiZfaGZSQdmXku8Jw6Q4'
+SPREADSHEET_ID = os.getenv("GOOGLE_SHEET_ID_REPO")  # ID de la hoja de Google desde variables de entorno
 SHEET_NAME = 'Inventario-Asignación'
 
-def extraer_licencia_cambridge_sheets(nivel, correo):
+def extraer_licencia_cambridge_sheets(correo, nivel):
     try:
-        # Ruta del archivo de credenciales
-        credentials_path = os.path.join(
-            os.path.dirname(__file__),
-            'credentials',
-            'gestion-licencias-cambridge-d7623f41e360.json'
-        )
-        
-        # Configurar credenciales
-        logging.info("Cargando credenciales para Google Sheets API.")
-        creds = Credentials.from_service_account_file(credentials_path, scopes=SCOPES)
+        # Cargar credenciales desde la variable de entorno en lugar de un archivo JSON
+        SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
+        creds_dict = json.loads(SERVICE_ACCOUNT_JSON)  # Convertir JSON en objeto Python
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+
+        # Conectar con Google Sheets
+        logging.info("Autenticando con Google Sheets API.")
         service = build('sheets', 'v4', credentials=creds)
         sheet = service.spreadsheets()
 
@@ -41,12 +39,14 @@ def extraer_licencia_cambridge_sheets(nivel, correo):
         logging.info(f"Buscando filas disponibles para el nivel '{nivel}'.")
         for idx, row in enumerate(values, start=1):  # `start=1` para reflejar índice en Sheets
             logging.info(f"Procesando fila {idx}: {row}")
-            while len(row) < 7:  # A:G tiene 7 columnas
-                 row.append("")
+            while len(row) < 7:  # Asegurar que tenga al menos 7 columnas
+                row.append("")
+
             if len(row) < 5:
-              logging.warning(f"Fila {idx} no tiene suficientes columnas: {row}")
-              continue
-            if len(row) >= 5 and row[0].strip().upper() == nivel.strip().upper() and not row[4]:  # Nivel coincide y columna E está vacía
+                logging.warning(f"Fila {idx} no tiene suficientes columnas: {row}")
+                continue
+
+            if row[0].strip().upper() == nivel.strip().upper() and not row[4]:  # Nivel coincide y columna E está vacía
                 codigo_licencia = row[2] if len(row) > 2 else None  # Columna C
                 if not codigo_licencia:
                     logging.error(f"No se encontró código de licencia en la columna C de la fila {idx}.")
@@ -74,8 +74,8 @@ def extraer_licencia_cambridge_sheets(nivel, correo):
                 updates = [
                     {"range": f"{SHEET_NAME}!E{idx}", "values": [["VIRTUAL"]]},  # Estado "VIRTUAL"
                     {"range": f"{SHEET_NAME}!F{idx}", "values": [[numero_contrato]]},  # N° contrato
-                    {"range": f"{SHEET_NAME}!G{idx}", "values": [[rut]]},             # RUT/RUN
-                    {"range": f"{SHEET_NAME}!D{idx}", "values": [[fecha_actual]]},    # Fecha actual
+                    {"range": f"{SHEET_NAME}!G{idx}", "values": [[rut]]},  # RUT/RUN
+                    {"range": f"{SHEET_NAME}!D{idx}", "values": [[fecha_actual]]},  # Fecha actual
                 ]
                 body = {"valueInputOption": "RAW", "data": updates}
 

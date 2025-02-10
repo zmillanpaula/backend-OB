@@ -77,7 +77,6 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
                 if "Ningún usuario coincide" in label_text:
                     logging.warning(f"⚠️ Usuario {correo} NO encontrado en {week_str}.")
-                    tomar_screenshot(driver, f"usuario_no_encontrado_{week_str}")
                     results.append({"week": week_str, "result": "Usuario no encontrado"})
                 else:
                     user_option = optgroup.find_element(By.TAG_NAME, "option")
@@ -93,7 +92,6 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
             except Exception as e:
                 logging.error(f"❌ Error en {week_str}: {e}")
-                tomar_screenshot(driver, f"error_asignacion_{week_str}")
                 results.append({"week": week_str, "result": f"Error: {str(e)}"})
 
             # 🔄 Volver a la página de "Cohortes" para la siguiente iteración
@@ -106,7 +104,6 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
     except Exception as e:
         logging.error(f"❌ Error general en la asignación avanzada: {e}")
-        tomar_screenshot(driver, "error_general_asignacion")
         return {"error": str(e)}
 
     finally:

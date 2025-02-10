@@ -97,5 +97,4 @@ def asignar_nivel_campus(driver, correo, nivel):
 
     except Exception as e:
         logging.error(f"❌ Error en la asignación de nivel '{nivel}' para {correo}: {str(e)}", exc_info=True)
-        tomar_screenshot(driver, f"error_asignacion_{nivel}")  # Captura en caso de error
         return {"error": f"Error en asignación: {str(e)}"}

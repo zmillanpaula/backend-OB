@@ -12,6 +12,8 @@ from asignar_nivel_cambridge import asignar_estudiante_cambridge
 from activeCampaignService import obtener_opciones_campo
 import os
 import requests
+from dotenv import load_dotenv
+
 
 # Configuración inicial
 sys.path.append('/app/scripts')
@@ -20,6 +22,10 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 selenium_manager = SeleniumManager()  # Instancia global para manejar la sesión
+
+load_dotenv()
+
+GOOGLE_SHEETS_API_KEY = os.getenv("GOOGLE_SHEETS_API_KEY")
 
 # Variables globales para almacenar temporalmente datos
 correo_global = None
@@ -204,6 +210,42 @@ def actualizar_estado():
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "¡Bienvenido al servidor Flask!"})
+
+@app.route('/obtener_licencia', methods=['POST'])
+def obtener_licencia():
+    """
+    Endpoint para extraer la licencia de Google Sheets.
+    Usa el correo almacenado en `correo_global`.
+    """
+    global correo_global  # Asegurar que usamos la variable global
+
+    if not correo_global:
+        logging.warning("⚠️ No hay un correo registrado en la variable global.")
+        return jsonify({"error": "No se encontró un correo activo en la sesión."}), 400
+
+    try:
+        data = request.get_json()
+        nivel = data.get("nivel")  # Solo necesitamos el nivel
+
+        if not nivel:
+            logging.warning("⚠️ Faltan parámetros: nivel no proporcionado.")
+            return jsonify({"error": "Nivel es requerido"}), 400
+
+        logging.info(f"🟢 Solicitando licencia para correo: {correo_global}, nivel: {nivel}")
+
+        # Llamar a la función de extracción de licencia
+        resultado = extraer_licencia_cambridge_sheets(correo_global, nivel)
+
+        if "error" in resultado:
+            logging.warning(f"⚠️ Error en extracción de licencia: {resultado['error']}")
+            return jsonify(resultado), 400
+
+        logging.info(f"✅ Licencia obtenida con éxito: {resultado}")
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.error(f"❌ Error en /obtener_licencia: {e}")
+        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
 
 
 if __name__ == "__main__":
