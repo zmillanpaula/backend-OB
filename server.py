@@ -211,6 +211,7 @@ def actualizar_estado():
 def home():
     return jsonify({"message": "¡Bienvenido al servidor Flask!"})
 
+
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
     """
