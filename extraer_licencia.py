@@ -38,7 +38,6 @@ def extraer_licencia_cambridge_sheets(correo, nivel):
         # Buscar fila que coincida con el nivel y tenga la columna E vacía
         logging.info(f"Buscando filas disponibles para el nivel '{nivel}'.")
         for idx, row in enumerate(values, start=1):  # `start=1` para reflejar índice en Sheets
-            logging.info(f"Procesando fila {idx}: {row}")
             while len(row) < 7:  # Asegurar que tenga al menos 7 columnas
                 row.append("")
 
