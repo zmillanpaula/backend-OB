@@ -9,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 sse_clients = {}
 
 def enviar_evento_sse(correo, mensaje):
+    
     """Envia actualizaciones en tiempo real a los clientes SSE."""
     if correo in sse_clients:
         sse_clients[correo].append(mensaje)
