@@ -93,6 +93,7 @@ def buscar_estudiante_endpoint():
 
         # 🔹 Si el estudiante fue encontrado, guardamos el correo globalmente
         correo_global = correo
+        logging.info(f"📌 Correo global almacenado: {correo_global}")
         logging.info(f"✅ Estudiante encontrado: {resultado}")
 
         return jsonify(resultado)
@@ -213,10 +214,6 @@ def home():
 
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
-    """
-    Endpoint para extraer la licencia de Google Sheets.
-    Usa el correo almacenado en `correo_global`.
-    """
     global correo_global  # Asegurar que usamos la variable global
 
     if not correo_global:
