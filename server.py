@@ -172,23 +172,20 @@ def limpiar_sesion():
         logging.exception(f"Error al limpiar la sesión: {e}")
         return jsonify({"error": "Error al limpiar la sesión"}), 500
 
-@app.route('/estado_asignacion', methods=['GET'])
+@app.route('/estado_asignacion_stream', methods=['GET'])
 def estado_asignacion_stream():
-    """Endpoint SSE para enviar actualizaciones en tiempo real."""
     def event_stream():
         correo = request.args.get("correo")
         if not correo:
-            yield "data: Error: Se requiere un correo\n\n"
+            yield "data: Error: No se proporcionó correo\n\n"
             return
 
-        sse_clients[correo] = []
+        for _ in range(60):  # Máximo 60 intentos (~5 minutos)
+            estado = estado_asignaciones.get(correo, "Pendiente")
+            yield f"data: {estado}\n\n"
+            time.sleep(5)  # Espera 5s entre actualizaciones
 
-        while True:
-            if sse_clients[correo]:
-                mensaje = sse_clients[correo].pop(0)
-                yield f"data: {mensaje}\n\n"
-
-    return Response(event_stream(), mimetype="text/event-stream")
+    return Response(event_stream(), content_type="text/event-stream")
 
 @app.route('/', methods=['GET'])
 def home():
