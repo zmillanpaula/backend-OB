@@ -1,18 +1,20 @@
 import sys
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-from selenium_manager import SeleniumManager
-from buscar_estudiante import buscar_estudiante
-from asignar_nivel import asignar_nivel_campus
-import logging
-from cerrar_onboarding import cerrar_onboarding_form
-from asignar_nivel_avanzado import asignar_nivel_avanzado
-from extraer_licencia import extraer_licencia_cambridge_sheets
-from asignar_nivel_cambridge import asignar_estudiante_cambridge
-from activeCampaignService import obtener_opciones_campo
 import os
 import requests
 from dotenv import load_dotenv
+import time
+import logging
+from selenium_manager import SeleniumManager
+from buscar_estudiante import buscar_estudiante
+from asignar_nivel import asignar_nivel_campus
+from cerrar_onboarding import cerrar_onboarding_form
+from asignar_nivel_avanzado import asignar_nivel_avanzado, enviar_evento_sse, sse_clients
+from extraer_licencia import extraer_licencia_cambridge_sheets
+from asignar_nivel_cambridge import asignar_estudiante_cambridge
+from activeCampaignService import obtener_opciones_campo
+
 
 
 # Configuración inicial
@@ -154,18 +156,11 @@ def asignar_nivel_avanzado_endpoint():
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
         
-        requests.post("https://backend-ob1-112160689786.us-west1.run.app/actualizar_estado", json={
-            "correo": correo,
-            "completado": True,
-            "details": resultado.get("details", [])
-        })
-
-        logging.info(f"✅ Resultado asignación avanzada: {resultado}")
         return jsonify(resultado)
 
     except Exception as e:
-        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}", exc_info=True)
-        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
+        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
+        return jsonify({"error": str(e)}), 500
     
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
@@ -178,35 +173,22 @@ def limpiar_sesion():
         return jsonify({"error": "Error al limpiar la sesión"}), 500
 
 @app.route('/estado_asignacion', methods=['GET'])
-def estado_asignacion():
-    """
-    Devuelve el estado actual de la asignación para un correo específico.
-    """
-    correo = request.args.get("correo")
-    if not correo:
-        return jsonify({"error": "Correo no proporcionado"}), 400
+def estado_asignacion_stream():
+    """Endpoint SSE para enviar actualizaciones en tiempo real."""
+    def event_stream():
+        correo = request.args.get("correo")
+        if not correo:
+            yield "data: Error: Se requiere un correo\n\n"
+            return
 
-    estado = estado_asignaciones.get(correo, {"completado": False})  # Default: False
-    return jsonify(estado)
+        sse_clients[correo] = []
 
+        while True:
+            if sse_clients[correo]:
+                mensaje = sse_clients[correo].pop(0)
+                yield f"data: {mensaje}\n\n"
 
-@app.route('/actualizar_estado', methods=['POST'])
-def actualizar_estado():
-    """
-    Actualiza el estado de la asignación cuando Selenium finaliza.
-    """
-    data = request.get_json()
-    correo = data.get("correo")
-    completado = data.get("completado", False)
-    detalles = data.get("details", [])
-
-    if not correo:
-        return jsonify({"error": "Correo no proporcionado"}), 400
-
-    estado_asignaciones[correo] = {"completado": completado, "details": detalles}
-    
-    logging.info(f"✅ Estado actualizado: {estado_asignaciones[correo]}")
-    return jsonify({"message": "Estado actualizado correctamente"})    
+    return Response(event_stream(), mimetype="text/event-stream")
 
 @app.route('/', methods=['GET'])
 def home():

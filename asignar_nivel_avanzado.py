@@ -1,9 +1,27 @@
 import time
 import logging
+from flask import Response
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium_manager import tomar_screenshot
+
+# 📌 Variable global para almacenar los eventos de SSE
+sse_clients = {}
+
+def enviar_evento_sse(correo, mensaje):
+    """Envia actualizaciones en tiempo real a los clientes SSE."""
+    if correo in sse_clients:
+        sse_clients[correo].append(mensaje)
+    logging.info(f"📡 SSE -> {mensaje}")
+    """Devuelve actualizaciones SSE en tiempo real sobre la asignación."""
+    def event_stream():
+        while True:
+            if correo in sse_clients and sse_clients[correo]:
+                mensaje = sse_clients[correo].pop(0)
+                yield f"data: {mensaje}\n\n"
+            time.sleep(1)
+
+    return Response(event_stream(), content_type="text/event-stream")
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
@@ -11,6 +29,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
     """
     try:
         logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}.")
+        enviar_evento_sse(correo, f"📌 Iniciando asignación avanzada para {correo}.")
 
         if not driver:
             raise Exception("❌ WebDriver no disponible.")
@@ -42,6 +61,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
         for week in range(1, 13):  # 🔹 Iterar de Week 01 a Week 12
             week_str = f"{nivel} Week {week:02d}"
             logging.info(f"🔎 Buscando nivel: {week_str}")
+            enviar_evento_sse(correo, f"🔎 Buscando nivel: {week_str}")
 
             try:
                 search_input = WebDriverWait(driver, 10).until(
@@ -67,7 +87,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 email_input.send_keys(correo)
 
                 # 🔹 Agregar tiempo de espera extra para cargar la lista de usuarios
-                time.sleep(3)  # Espera 3 segundos antes de verificar si aparece el usuario
+                time.sleep(2)  # Espera 2 segundos antes de verificar si aparece el usuario
 
                 user_select = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, "addselect"))
@@ -77,6 +97,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
 
                 if "Ningún usuario coincide" in label_text:
                     logging.warning(f"⚠️ Usuario {correo} NO encontrado en {week_str}.")
+                    enviar_evento_sse(correo, f"⚠️ Usuario NO encontrado en {week_str}.")
                     results.append({"week": week_str, "result": "Usuario no encontrado"})
                 else:
                     user_option = optgroup.find_element(By.TAG_NAME, "option")
@@ -88,10 +109,12 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                     add_button.click()
 
                     logging.info(f"✅ Usuario {correo} asignado a {week_str}.")
+                    enviar_evento_sse(correo, f"✅ Usuario asignado a {week_str}.")
                     results.append({"week": week_str, "result": "Asignación exitosa"})
 
             except Exception as e:
                 logging.error(f"❌ Error en {week_str}: {e}")
+                enviar_evento_sse(correo, f"❌ Error en {week_str}: {e}")
                 results.append({"week": week_str, "result": f"Error: {str(e)}"})
 
             # 🔄 Volver a la página de "Cohortes" para la siguiente iteración
@@ -99,11 +122,12 @@ def asignar_nivel_avanzado(driver, correo, nivel):
             time.sleep(3)
 
         logging.info("✅ Asignación avanzada completada.")
-
+        enviar_evento_sse(correo, "✅ Asignación avanzada completada.")
         return {"message": "✅ Asignación avanzada completada.", "details": results}
 
     except Exception as e:
         logging.error(f"❌ Error general en la asignación avanzada: {e}")
+        enviar_evento_sse(correo, f"❌ Error: {str(e)}")
         return {"error": str(e)}
 
     finally:
