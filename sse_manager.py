@@ -1,24 +1,42 @@
-from flask import Response
 import time
 import logging
+from flask import Response
 
-sse_clients = {}
+sse_clients = {}  # Diccionario de clientes SSE conectados
 
 def enviar_evento_sse(correo, mensaje):
-    """Agrega un mensaje para el usuario y lo envía inmediatamente si hay una conexión activa."""
+    """Envía un mensaje a los clientes conectados en tiempo real."""
     if correo not in sse_clients:
-        sse_clients[correo] = []
-    sse_clients[correo].append(mensaje)
-    logging.info(f"📡 SSE -> {correo}: {mensaje}")
+        logging.warning(f"⚠️ No hay clientes SSE conectados para {correo}.")
+        return
+
+    try:
+        sse_clients[correo].write(f"data: {mensaje}\n\n")
+        sse_clients[correo].flush()
+        logging.info(f"📡 SSE enviado -> {correo}: {mensaje}")
+    except Exception as e:
+        logging.error(f"❌ Error enviando SSE a {correo}: {e}")
 
 def obtener_eventos_sse(correo):
-    """Genera un stream de eventos SSE para el correo especificado."""
+    """Maneja la conexión SSE para un correo específico."""
     def event_stream():
-        while True:
-            if correo in sse_clients and sse_clients[correo]:
-                mensaje = sse_clients[correo].pop(0)
-                yield f"data: {mensaje}\n\n"
-                logging.info(f"📤 Enviando SSE -> {correo}: {mensaje}")
-            time.sleep(1)
+        try:
+            while True:
+                # 🔹 Si hay mensajes, los enviamos
+                if correo in sse_clients and sse_clients[correo]:
+                    mensaje = sse_clients[correo].pop(0)
+                    yield f"data: {mensaje}\n\n"
 
-    return Response(event_stream(), content_type="text/event-stream")
+                # 🔹 Enviar un "ping" cada 10s para evitar desconexión
+                yield "data: [PING]\n\n"
+                time.sleep(10)
+
+        except GeneratorExit:
+            logging.info(f"🔌 Cliente SSE desconectado: {correo}")
+            sse_clients.pop(correo, None)  # Eliminar cliente al desconectarse
+
+    response = Response(event_stream(), content_type="text/event-stream")
+    sse_clients[correo] = []
+    logging.info(f"✅ Cliente SSE conectado para {correo}")
+
+    return response
