@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import time
 import logging
 from selenium_manager import SeleniumManager
+from sse_manager import obtener_eventos_sse, enviar_evento_sse
 from buscar_estudiante import buscar_estudiante
 from asignar_nivel import asignar_nivel_campus
 from cerrar_onboarding import cerrar_onboarding_form
@@ -176,17 +177,11 @@ def limpiar_sesion():
 
 @app.route('/estado_asignacion_stream', methods=['GET'])
 def estado_asignacion_stream():
-    correo = request.args.get("correo")  # 🔹 Captura `correo` antes del generador
+    correo = request.args.get("correo")
     if not correo:
-        return Response("data: Error: No se proporcionó correo\n\n", content_type="text/event-stream")
+        return jsonify({"error": "Correo requerido para SSE"}), 400
 
-    def event_stream(correo):
-        for _ in range(60):  # 🔄 Máximo 5 minutos de intentos (60 * 5s)
-            estado = estado_asignaciones.get(correo, "Pendiente")
-            yield f"data: {estado}\n\n"
-            time.sleep(5)  # 🔄 Espera 5 segundos
-
-    return Response(event_stream(correo), content_type="text/event-stream")
+    return obtener_eventos_sse(correo)
 
 @app.route('/', methods=['GET'])
 def home():

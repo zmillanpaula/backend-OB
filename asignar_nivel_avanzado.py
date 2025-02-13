@@ -4,16 +4,8 @@ from flask import Response
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from sse_manager import enviar_evento_sse
 
-# 📌 Variable global para almacenar los eventos de SSE
-sse_clients = {}
-
-def enviar_evento_sse(correo, mensaje):
-    """Envía actualizaciones en tiempo real a los clientes SSE."""
-    if correo not in sse_clients:
-        sse_clients[correo] = []
-    sse_clients[correo].append(mensaje)
-    logging.info(f"📡 SSE -> {mensaje}")
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
