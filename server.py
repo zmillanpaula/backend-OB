@@ -25,6 +25,8 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 selenium_manager = SeleniumManager()  # Instancia global para manejar la sesión
 
+estado_asignaciones = {}
+
 load_dotenv()
 
 GOOGLE_SHEETS_API_KEY = os.getenv("GOOGLE_SHEETS_API_KEY")
@@ -174,18 +176,17 @@ def limpiar_sesion():
 
 @app.route('/estado_asignacion_stream', methods=['GET'])
 def estado_asignacion_stream():
-    def event_stream():
-        correo = request.args.get("correo")
-        if not correo:
-            yield "data: Error: No se proporcionó correo\n\n"
-            return
+    correo = request.args.get("correo")  # 🔹 Captura `correo` antes del generador
+    if not correo:
+        return Response("data: Error: No se proporcionó correo\n\n", content_type="text/event-stream")
 
-        for _ in range(60):  # Máximo 60 intentos (~5 minutos)
+    def event_stream(correo):
+        for _ in range(60):  # 🔄 Máximo 5 minutos de intentos (60 * 5s)
             estado = estado_asignaciones.get(correo, "Pendiente")
             yield f"data: {estado}\n\n"
-            time.sleep(5)  # Espera 5s entre actualizaciones
+            time.sleep(5)  # 🔄 Espera 5 segundos
 
-    return Response(event_stream(), content_type="text/event-stream")
+    return Response(event_stream(correo), content_type="text/event-stream")
 
 @app.route('/', methods=['GET'])
 def home():
