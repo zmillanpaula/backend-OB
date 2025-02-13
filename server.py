@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 import time
 import logging
 from selenium_manager import SeleniumManager
-from sse_manager import obtener_eventos_sse, enviar_evento_sse
+from sse_manager import obtener_eventos_sse, enviar_evento_sse, sse_clients
 from buscar_estudiante import buscar_estudiante
 from asignar_nivel import asignar_nivel_campus
 from cerrar_onboarding import cerrar_onboarding_form
-from asignar_nivel_avanzado import asignar_nivel_avanzado, enviar_evento_sse, sse_clients
+from asignar_nivel_avanzado import asignar_nivel_avanzado
 from extraer_licencia import extraer_licencia_cambridge_sheets
 from asignar_nivel_cambridge import asignar_estudiante_cambridge
 from activeCampaignService import obtener_opciones_campo
