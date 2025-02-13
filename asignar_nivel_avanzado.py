@@ -9,20 +9,11 @@ from selenium.webdriver.support import expected_conditions as EC
 sse_clients = {}
 
 def enviar_evento_sse(correo, mensaje):
-    
-    """Envia actualizaciones en tiempo real a los clientes SSE."""
-    if correo in sse_clients:
-        sse_clients[correo].append(mensaje)
+    """Envía actualizaciones en tiempo real a los clientes SSE."""
+    if correo not in sse_clients:
+        sse_clients[correo] = []
+    sse_clients[correo].append(mensaje)
     logging.info(f"📡 SSE -> {mensaje}")
-    """Devuelve actualizaciones SSE en tiempo real sobre la asignación."""
-    def event_stream():
-        while True:
-            if correo in sse_clients and sse_clients[correo]:
-                mensaje = sse_clients[correo].pop(0)
-                yield f"data: {mensaje}\n\n"
-            time.sleep(1)
-
-    return Response(event_stream(), content_type="text/event-stream")
 
 def asignar_nivel_avanzado(driver, correo, nivel):
     """
@@ -36,23 +27,27 @@ def asignar_nivel_avanzado(driver, correo, nivel):
             raise Exception("❌ WebDriver no disponible.")
 
         # 🔹 Navegar desde el panel principal
-        logging.info("🌍 Accediendo al panel principal...")
+        logging.info("🌍 Accediendo a Campus Virtual...")
+        enviar_evento_sse(correo, "🌍 Accediendo a Campus Virtual...")
         driver.get("https://campusvirtual.bestwork.cl/my/")
 
         # 🔹 Acceder a Administración del sitio
         logging.info("📂 Accediendo a Administración del sitio...")
+        enviar_evento_sse(correo, "📂 Accediendo a Administración del sitio...")
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.LINK_TEXT, "Administración del sitio"))
         ).click()
 
         # 🔹 Ir a la pestaña Usuarios
         logging.info("👥 Cambiando a la sección Usuarios...")
+        enviar_evento_sse(correo, "👥 Cambiando a la sección Usuarios...")
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.LINK_TEXT, "Usuarios"))
         ).click()
 
         # 🔹 Ir a Cohortes
         logging.info("📂 Accediendo a Cohortes...")
+        enviar_evento_sse(correo, "📂 Accediendo a Cohortes...")
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.LINK_TEXT, "Cohortes"))
         ).click()
@@ -87,8 +82,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
                 email_input.clear()
                 email_input.send_keys(correo)
 
-                # 🔹 Agregar tiempo de espera extra para cargar la lista de usuarios
-                time.sleep(2)  # Espera 2 segundos antes de verificar si aparece el usuario
+                time.sleep(2)  # 🔹 Dar tiempo para cargar la lista
 
                 user_select = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, "addselect"))
@@ -130,8 +124,3 @@ def asignar_nivel_avanzado(driver, correo, nivel):
         logging.error(f"❌ Error general en la asignación avanzada: {e}")
         enviar_evento_sse(correo, f"❌ Error: {str(e)}")
         return {"error": str(e)}
-
-    finally:
-        # 🔹 Cerrar el WebDriver al finalizar el proceso
-        logging.info("🔚 Cerrando WebDriver después de completar la asignación.")
-        driver.quit()
