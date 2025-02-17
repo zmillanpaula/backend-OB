@@ -11,3 +11,4 @@ google-auth-httplib2==0.1.0
 google-api-python-client==2.100.0
 gunicorn
 python-dotenv
+gspread

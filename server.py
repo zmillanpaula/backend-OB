@@ -137,32 +137,45 @@ def asignar_nivel_avanzado_endpoint():
     """
     global selenium_manager, correo_global
     
+@app.route('/asignar_nivel_avanzado', methods=['POST'])
+def asignar_nivel_avanzado_endpoint():
+    
+
     try:
-        data = request.json
-        correo = data.get('correo')
-        nivel = data.get('nivel')
+        global correo_global
+        global selenium_manager
 
-        if not correo:
-            correo = correo_global  # Usa correo_global solo si no se recibe en el request
+        logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}...")
 
-        if not correo or not nivel:
-            return jsonify({"error": "Correo y nivel son requeridos"}), 400
+        # 1. Asignar nivel en Campus Virtual
+        resultado_campus = asignar_nivel_campus(selenium_manager.driver, correo, nivel)
+        if 'error' in resultado_campus:
+            return jsonify(resultado_campus), 400
 
-        logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}...")
+        # 2. Extraer licencia de Google Sheets
+        resultado_licencia = extraer_licencia_cambridge_sheets(correo, nivel)
+        if 'error' in resultado_licencia:
+            return jsonify(resultado_licencia), 400
 
-        # Llamamos a Selenium para asignar nivel
-        try:
-            driver = selenium_manager.start_driver()
-        except Exception as e:
-            logging.error(f"❌ Error al iniciar WebDriver: {e}", exc_info=True)
-            return jsonify({"error": "No se pudo iniciar el WebDriver. Verifica Selenium Grid."}), 500
+        # 3. Asignar nivel en Cambridge
+        resultado_cambridge = asignar_estudiante_cambridge(
+            selenium_manager.driver,
+            nivel,
+            correo,
+            resultado_licencia.get('codigo_licencia')
+        )
+        if 'error' in resultado_cambridge:
+            return jsonify(resultado_cambridge), 400
 
-        resultado = asignar_nivel_avanzado(driver, correo, nivel)
-        
-        return jsonify(resultado)
+        return jsonify({
+            "message": "Nivel asignado exitosamente en todas las plataformas.",
+            "campus": resultado_campus,
+            "licencia": resultado_licencia,
+            "cambridge": resultado_cambridge
+        })
 
     except Exception as e:
-        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
+        logging.error(f"Error en /asignar_nivel_avanzado: {e}")
         return jsonify({"error": str(e)}), 500
     
 @app.route('/limpiar_sesion', methods=['POST'])
