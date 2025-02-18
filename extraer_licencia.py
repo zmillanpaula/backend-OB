@@ -63,7 +63,7 @@ def extraer_licencia_cambridge_sheets(correo, nivel):
 
                 # Extraer RUT/RUN y número de contrato
                 rut = next((fv["value"] for fv in contacto.get("fieldValues", []) if fv["field"] == "36"), None)
-                numero_contrato = next((fv["value"] for fv in contacto.get("fieldValues", []) if fv["field"] == "184"), None)
+                numero_contrato = next((fv["value"] for fv in contacto.get("fieldValues", []) if fv["field"] == "197"), None)
 
                 if not rut or not numero_contrato:
                     logging.error("Datos insuficientes en ActiveCampaign para completar la hoja.")
