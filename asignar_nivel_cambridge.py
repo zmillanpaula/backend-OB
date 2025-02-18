@@ -19,7 +19,7 @@ def transformar_nivel(nivel):
     }
     return niveles_dict.get(nivel, nivel)  # Si no está en el diccionario, devuelve el mismo valor
 
-def login_cambridge(nivel_ingresado, email):
+def invitacion_cambridge(nivel_ingresado, email):
     driver = webdriver.Chrome()
 
     try:
@@ -206,4 +206,4 @@ def login_cambridge(nivel_ingresado, email):
 if __name__ == "__main__":
     email_usuario = input("Ingrese el correo del estudiante: ").strip().lower()
     nivel_usuario = input("Ingrese el nivel (ej. 3A, 4A, 5A): ").strip().upper()
-    login_cambridge(nivel_usuario, email_usuario)
+    invitacion_cambridge(nivel_usuario, email_usuario)

@@ -13,7 +13,7 @@ from asignar_nivel import asignar_nivel_campus
 from cerrar_onboarding import cerrar_onboarding_form
 from asignar_nivel_avanzado import asignar_nivel_avanzado
 from extraer_licencia import extraer_licencia_cambridge_sheets
-from asignar_nivel_cambridge import asignar_estudiante_cambridge
+from asignar_nivel_cambridge import invitacion_cambridge
 from activeCampaignService import obtener_opciones_campo
 
 
@@ -137,45 +137,32 @@ def asignar_nivel_avanzado_endpoint():
     """
     global selenium_manager, correo_global
     
-@app.route('/asignar_nivel_avanzado', methods=['POST'])
-def asignar_nivel_avanzado_endpoint():
-    
-
     try:
-        global correo_global
-        global selenium_manager
+        data = request.json
+        correo = data.get('correo')
+        nivel = data.get('nivel')
 
-        logging.info(f"Iniciando asignación avanzada para {correo} en nivel {nivel}...")
+        if not correo:
+            correo = correo_global  # Usa correo_global solo si no se recibe en el request
 
-        # 1. Asignar nivel en Campus Virtual
-        resultado_campus = asignar_nivel_campus(selenium_manager.driver, correo, nivel)
-        if 'error' in resultado_campus:
-            return jsonify(resultado_campus), 400
+        if not correo or not nivel:
+            return jsonify({"error": "Correo y nivel son requeridos"}), 400
 
-        # 2. Extraer licencia de Google Sheets
-        resultado_licencia = extraer_licencia_cambridge_sheets(correo, nivel)
-        if 'error' in resultado_licencia:
-            return jsonify(resultado_licencia), 400
+        logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}...")
 
-        # 3. Asignar nivel en Cambridge
-        resultado_cambridge = asignar_estudiante_cambridge(
-            selenium_manager.driver,
-            nivel,
-            correo,
-            resultado_licencia.get('codigo_licencia')
-        )
-        if 'error' in resultado_cambridge:
-            return jsonify(resultado_cambridge), 400
+        # Llamamos a Selenium para asignar nivel
+        try:
+            driver = selenium_manager.start_driver()
+        except Exception as e:
+            logging.error(f"❌ Error al iniciar WebDriver: {e}", exc_info=True)
+            return jsonify({"error": "No se pudo iniciar el WebDriver. Verifica Selenium Grid."}), 500
 
-        return jsonify({
-            "message": "Nivel asignado exitosamente en todas las plataformas.",
-            "campus": resultado_campus,
-            "licencia": resultado_licencia,
-            "cambridge": resultado_cambridge
-        })
+        resultado = asignar_nivel_avanzado(driver, correo, nivel)
+        
+        return jsonify(resultado)
 
     except Exception as e:
-        logging.error(f"Error en /asignar_nivel_avanzado: {e}")
+        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
         return jsonify({"error": str(e)}), 500
     
 @app.route('/limpiar_sesion', methods=['POST'])
