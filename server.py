@@ -78,46 +78,44 @@ def buscar_estudiante_endpoint():
             logging.error("⚠️ Faltan campos requeridos: correo o monitor.")
             return jsonify({"error": "Correo y monitor son requeridos"}), 400
 
+        # 🔹 Reiniciar correo_global para evitar datos previos
+        correo_global = None  
+
         logging.info(f"👤 Monitor seleccionado: {monitor}")
         logging.info(f"📧 Correo ingresado: {correo}")
 
-        # 🔹 Obtener WebDriver activo o iniciar uno nuevo (login automático si es necesario)
         driver = selenium_manager.start_driver()
-
-        # 🔹 Buscar estudiante en el sistema
         resultado = buscar_estudiante(driver, correo)
 
-        # 🔹 Manejo de errores en la búsqueda
         if "error" in resultado:
             logging.warning(f"❌ Error en búsqueda: {resultado['error']}")
             return jsonify({"error": resultado["error"], "existe": resultado["existe"]}), 400
 
-        # 🔹 Si el estudiante fue encontrado, guardamos el correo globalmente
+        # 🔹 Guardamos el nuevo correo solo si se encuentra el estudiante
         correo_global = correo
         logging.info(f"📌 Correo global almacenado: {correo_global}")
-        logging.info(f"✅ Estudiante encontrado: {resultado}")
 
         return jsonify(resultado)
 
     except Exception as e:
         logging.exception(f"❌ Error en /buscar_estudiante: {e}")
-        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
+        return jsonify({"error": "Ocurrió un error interno."}), 500
 
 @app.route('/asignar_nivel', methods=['POST'])
 def asignar_nivel_endpoint():
-    """
-    Asigna un nivel básico al estudiante.
-    """
-    global correo_global
-    global selenium_manager
+    global correo_global, selenium_manager
     try:
         data = request.json
         nivel = data.get('nivel')
 
-        if not all([correo_global, nivel]):
-            return jsonify({"error": "Faltan datos requeridos"}), 400
+        if not correo_global:
+            logging.error("⚠️ No hay correo disponible en la sesión.")
+            return jsonify({"error": "No se encontró un correo activo. Inicie una nueva búsqueda."}), 400
 
-        logging.info(f"Asignando nivel {nivel} al correo {correo_global}...")
+        if not nivel:
+            return jsonify({"error": "Nivel es requerido"}), 400
+
+        logging.info(f"📌 Asignando nivel {nivel} a {correo_global}...")
         driver = selenium_manager.start_driver()
         resultado = asignar_nivel_campus(driver, correo_global, nivel)
         
@@ -163,10 +161,11 @@ def asignar_nivel_avanzado_endpoint():
     
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
-    global selenium_manager
+    global selenium_manager, correo_global  # Agregar correo_global
     try:
         selenium_manager.quit_driver()
-        return jsonify({"message": "Sesión de Selenium cerrada con éxito"}), 200
+        correo_global = None  # 🔹 Reiniciar la variable global
+        return jsonify({"message": "Sesión cerrada y datos reiniciados con éxito"}), 200
     except Exception as e:
         logging.exception(f"Error al limpiar la sesión: {e}")
         return jsonify({"error": "Error al limpiar la sesión"}), 500
@@ -187,22 +186,27 @@ def home():
 def obtener_licencia():
     global correo_global  # Asegurar que usamos la variable global
 
-    if not correo_global:
-        logging.warning("⚠️ No hay un correo registrado en la variable global.")
-        return jsonify({"error": "No se encontró un correo activo en la sesión."}), 400
-
     try:
         data = request.get_json()
-        nivel = data.get("nivel")  # Solo necesitamos el nivel
+        correo = data.get("correo")  # 🔹 Obtener correo del request
+        nivel = data.get("nivel")
 
         if not nivel:
             logging.warning("⚠️ Faltan parámetros: nivel no proporcionado.")
             return jsonify({"error": "Nivel es requerido"}), 400
 
-        logging.info(f"🟢 Solicitando licencia para correo: {correo_global}, nivel: {nivel}")
+        # ✅ Si el correo no viene en el request, usar el correo global como respaldo
+        if not correo:
+            correo = correo_global
+
+        if not correo:
+            logging.warning("⚠️ No hay un correo registrado en la sesión ni en la petición.")
+            return jsonify({"error": "No se encontró un correo activo. Intente nuevamente."}), 400
+
+        logging.info(f"🟢 Solicitando licencia para correo: {correo}, nivel: {nivel}")
 
         # Llamar a la función de extracción de licencia
-        resultado = extraer_licencia_cambridge_sheets(correo_global, nivel)
+        resultado = extraer_licencia_cambridge_sheets(correo, nivel)
 
         if "error" in resultado:
             logging.warning(f"⚠️ Error en extracción de licencia: {resultado['error']}")
@@ -214,7 +218,6 @@ def obtener_licencia():
     except Exception as e:
         logging.error(f"❌ Error en /obtener_licencia: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
-
 
 if __name__ == "__main__":
     # Instancia de SeleniumManager para verificar el estado de Selenium Grid
