@@ -41,21 +41,17 @@ estado_asignaciones = {}
 logging.basicConfig(level=logging.INFO)
 
 
-@app.route('/monitores', methods=['GET'])
-def get_monitores():
-    """
-    Devuelve la lista de monitores predefinida.
-    """
-    monitores = [
-        "Maureen Salinas", "Romina Pego", "Rubén Erazo", "Karen Bázaez",
-        "Gabriela Vargas", "Bernardo Inostroza", "Bruno Palma", "Ivette Aguirre",
-        "Andrés Molina", "Rocío Pérez", "Nelvia Mardones", "Jaime Rodríguez",
-        "Bárbara Gangas", "Carmen Tebre", "Francisca Osorio", "Francisca Vera",
-        "Damaris Ibarra", "Francois Gomez", "Victor Roa", "Sara Parra",
-        "Vivian Lagos", "Tania Ferreira", "Valentina Pacheco", "Katherine Torres",
-        "Pablo Mancilla", "Rodrigo Barrientos", "Maria Patricia Orellana", "Felipe Quilaqueo"
-    ]
-    return jsonify(monitores)
+@app.route('/proxy_monitores')
+def proxy_monitores():
+    url = "https://sedsa.api-us1.com/api/3/fields/264/options"
+    headers = {"Api-Token": "d2830a151e2d5ae79ee56b3bf8035c9728d27a1c75fbd2fe89eff5f11c57f078c0f93ae1"}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/seleccion_monitor', methods=['POST'])
 def guardar_seleccion():
