@@ -153,6 +153,7 @@ def asignar_nivel_avanzado_endpoint():
             return jsonify({"error": "No se pudo iniciar el WebDriver. Verifica Selenium Grid."}), 500
         
         nivel_global = nivel
+        correo_global = correo
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
         
