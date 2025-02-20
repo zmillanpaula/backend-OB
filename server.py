@@ -162,8 +162,7 @@ def asignar_nivel_avanzado_endpoint():
         logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
         return jsonify({"error": str(e)}), 500
     
-@app.route('/obtener_licencia', methods=['POST'])
-def obtener_licencia():
+
     global correo_global  # Asegurar que usamos la variable global
 
     try:
@@ -199,17 +198,56 @@ def obtener_licencia():
         logging.error(f"❌ Error en /obtener_licencia: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
 
+@app.route('/obtener_licencia', methods=['POST'])
+def obtener_licencia():
+    global correo_global  
+
+    try:
+        data = request.get_json()
+        correo = data.get("correo", correo_global)  
+        nivel = data.get("nivel")
+
+        if not nivel:
+            logging.warning("⚠️ Nivel no proporcionado.")
+            return jsonify({"error": "Nivel es requerido"}), 400
+
+        if not correo:
+            logging.warning("⚠️ No hay un correo registrado en la sesión ni en la petición.")
+            return jsonify({"error": "No se encontró un correo activo. Intente nuevamente."}), 400
+
+        logging.info(f"🟢 Solicitando licencia para correo: {correo}, nivel: {nivel}")
+
+        # ✅ Llamamos a la función de extracción de licencia
+        resultado = extraer_licencia_cambridge_sheets(correo, nivel)
+
+        if "error" in resultado:
+            logging.warning(f"⚠️ No se encontraron licencias disponibles en stock.")
+            return jsonify({
+                "warning": "No hay licencias disponibles en este momento. Será enviada a su correo a la brevedad."
+            }), 200
+
+        logging.info(f"✅ Licencia obtenida con éxito: {resultado}")
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.error(f"❌ Error en /obtener_licencia: {e}")
+        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
+
 @app.route('/enviar_invitacion_cambridge', methods=['POST'])
 def enviar_invitacion_cambridge_endpoint():
     """
     Endpoint para enviar una invitación a Cambridge y obtener la classKey.
     """
-    global selenium_manager, correo_global, nivel_global  # 🔹 Usamos nivel_global
+    global selenium_manager, correo_global, nivel_global  
+
+    if not request.is_json:
+        logging.warning("⚠️ La solicitud no tiene un Content-Type válido.")
+        return jsonify({"error": "La solicitud debe ser de tipo 'application/json'."}), 415
 
     try:
         data = request.json
-        correo = data.get("correo", correo_global)  # Si no viene en la petición, usa el correo global
-        nivel = data.get("nivel", nivel_global)  # 🔹 Si no viene en la petición, usa el nivel global
+        correo = data.get("correo", correo_global)
+        nivel = data.get("nivel", nivel_global)
 
         if not correo or not nivel:
             logging.warning("⚠️ Correo o nivel faltantes en la sesión.")
@@ -220,11 +258,17 @@ def enviar_invitacion_cambridge_endpoint():
         driver = selenium_manager.start_driver()
         resultado = invitacion_cambridge(driver, correo, nivel)
 
-        return jsonify(resultado)
+        if "error" in resultado:
+            return jsonify(resultado), 400  # Si hubo error en Cambridge, lo devolvemos
+
+        # ✅ Guardamos classKey en la sesión temporal (opcional)
+        classKey_global = resultado.get("classKey")
+
+        return jsonify({"success": True, "classKey": classKey_global})
 
     except Exception as e:
-        logging.error(f"❌ Error en /enviar_invitacion_cambridge: {e}")
-        return jsonify({"error": str(e)}), 500    
+        logging.error(f"❌ Error en /enviar_invitacion_cambridge: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500  
     
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
