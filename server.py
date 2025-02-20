@@ -164,41 +164,6 @@ def asignar_nivel_avanzado_endpoint():
         return jsonify({"error": str(e)}), 500
     
 
-    global correo_global  # Asegurar que usamos la variable global
-
-    try:
-        data = request.get_json()
-        correo = data.get("correo")  # 🔹 Obtener correo del request
-        nivel = data.get("nivel")
-
-        if not nivel:
-            logging.warning("⚠️ Faltan parámetros: nivel no proporcionado.")
-            return jsonify({"error": "Nivel es requerido"}), 400
-
-        # ✅ Si el correo no viene en el request, usar el correo global como respaldo
-        if not correo:
-            correo = correo_global
-
-        if not correo:
-            logging.warning("⚠️ No hay un correo registrado en la sesión ni en la petición.")
-            return jsonify({"error": "No se encontró un correo activo. Intente nuevamente."}), 400
-
-        logging.info(f"🟢 Solicitando licencia para correo: {correo}, nivel: {nivel}")
-
-        # Llamar a la función de extracción de licencia
-        resultado = extraer_licencia_cambridge_sheets(correo, nivel)
-
-        if "error" in resultado:
-            logging.warning(f"⚠️ Error en extracción de licencia: {resultado['error']}")
-            return jsonify(resultado), 400
-
-        logging.info(f"✅ Licencia obtenida con éxito: {resultado}")
-        return jsonify(resultado)
-
-    except Exception as e:
-        logging.error(f"❌ Error en /obtener_licencia: {e}")
-        return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
-
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
     global correo_global  
