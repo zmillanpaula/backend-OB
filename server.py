@@ -34,6 +34,7 @@ GOOGLE_SHEETS_API_KEY = os.getenv("GOOGLE_SHEETS_API_KEY")
 
 # Variables globales para almacenar temporalmente datos
 correo_global = None
+nivel_global = None
 temp_storage = {"monitor": None}
 estado_asignaciones = {} 
 
@@ -129,7 +130,7 @@ def asignar_nivel_avanzado_endpoint():
     """
     Endpoint para asignar un nivel avanzado a un estudiante en Campus Virtual.
     """
-    global selenium_manager, correo_global
+    global selenium_manager, correo_global, nivel_global
     
     try:
         data = request.json
@@ -150,6 +151,8 @@ def asignar_nivel_avanzado_endpoint():
         except Exception as e:
             logging.error(f"❌ Error al iniciar WebDriver: {e}", exc_info=True)
             return jsonify({"error": "No se pudo iniciar el WebDriver. Verifica Selenium Grid."}), 500
+        
+        nivel_global = nivel
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
         
@@ -159,29 +162,6 @@ def asignar_nivel_avanzado_endpoint():
         logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
         return jsonify({"error": str(e)}), 500
     
-@app.route('/limpiar_sesion', methods=['POST'])
-def limpiar_sesion():
-    global selenium_manager, correo_global  # Agregar correo_global
-    try:
-        selenium_manager.quit_driver()
-        correo_global = None  # 🔹 Reiniciar la variable global
-        return jsonify({"message": "Sesión cerrada y datos reiniciados con éxito"}), 200
-    except Exception as e:
-        logging.exception(f"Error al limpiar la sesión: {e}")
-        return jsonify({"error": "Error al limpiar la sesión"}), 500
-
-@app.route('/estado_asignacion_stream', methods=['GET'])
-def estado_asignacion_stream():
-    correo = request.args.get("correo")
-    if not correo:
-        return jsonify({"error": "Correo requerido para SSE"}), 400
-
-    return obtener_eventos_sse(correo)
-
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "¡Bienvenido al servidor Flask!"})
-
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
     global correo_global  # Asegurar que usamos la variable global
@@ -218,6 +198,59 @@ def obtener_licencia():
     except Exception as e:
         logging.error(f"❌ Error en /obtener_licencia: {e}")
         return jsonify({"error": "Ocurrió un error interno. Contacta al administrador."}), 500
+
+@app.route('/enviar_invitacion_cambridge', methods=['POST'])
+def enviar_invitacion_cambridge_endpoint():
+    """
+    Endpoint para enviar una invitación a Cambridge y obtener la classKey.
+    """
+    global selenium_manager, correo_global, nivel_global  # 🔹 Usamos nivel_global
+
+    try:
+        data = request.json
+        correo = data.get("correo", correo_global)  # Si no viene en la petición, usa el correo global
+        nivel = data.get("nivel", nivel_global)  # 🔹 Si no viene en la petición, usa el nivel global
+
+        if not correo or not nivel:
+            logging.warning("⚠️ Correo o nivel faltantes en la sesión.")
+            return jsonify({"error": "Correo y nivel son requeridos"}), 400
+
+        logging.info(f"📌 Enviando invitación a Cambridge para {correo} en nivel {nivel}...")
+
+        driver = selenium_manager.start_driver()
+        resultado = invitacion_cambridge(driver, correo, nivel)
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.error(f"❌ Error en /enviar_invitacion_cambridge: {e}")
+        return jsonify({"error": str(e)}), 500    
+    
+@app.route('/limpiar_sesion', methods=['POST'])
+def limpiar_sesion():
+    global selenium_manager, correo_global  # Agregar correo_global
+    try:
+        selenium_manager.quit_driver()
+        correo_global = None  # 🔹 Reiniciar la variable global
+        return jsonify({"message": "Sesión cerrada y datos reiniciados con éxito"}), 200
+    except Exception as e:
+        logging.exception(f"Error al limpiar la sesión: {e}")
+        return jsonify({"error": "Error al limpiar la sesión"}), 500
+
+@app.route('/estado_asignacion_stream', methods=['GET'])
+def estado_asignacion_stream():
+    correo = request.args.get("correo")
+    if not correo:
+        return jsonify({"error": "Correo requerido para SSE"}), 400
+
+    return obtener_eventos_sse(correo)
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "¡Bienvenido al servidor Flask!"})
+
+
+
 
 if __name__ == "__main__":
     # Instancia de SeleniumManager para verificar el estado de Selenium Grid
