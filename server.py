@@ -161,17 +161,27 @@ def obtener_licencia():
 
 @app.route('/enviar_invitacion_cambridge', methods=['POST'])
 def enviar_invitacion_cambridge_endpoint():
-    global selenium_manager, correo_global, nivel_global, classKey_global  
+    global selenium_manager, correo_global, nivel_global  
 
     if not request.is_json:
+        logging.warning("⚠️ La solicitud no tiene un Content-Type válido.")
         return jsonify({"error": "La solicitud debe ser de tipo 'application/json'."}), 415
 
     try:
-        correo = correo_global
-        nivel = nivel_global  
+        data = request.json
+        logging.info(f"📩 Datos recibidos en /enviar_invitacion_cambridge: {data}")  
+
+        correo = data.get("correo")
+        if not correo:
+            correo = correo_global  # ✅ Solo usa correo_global si no vino en el request
+
+        nivel = data.get("nivel", nivel_global)
 
         if not correo or not nivel:
+            logging.warning(f"⚠️ Correo o nivel faltantes en /enviar_invitacion_cambridge. Recibido: correo={correo}, nivel={nivel}")
             return jsonify({"error": "Correo y nivel son requeridos"}), 400
+
+        logging.info(f"📌 Enviando invitación a Cambridge para {correo} en nivel {nivel}...")
 
         driver = selenium_manager.start_driver()
         resultado = invitacion_cambridge(driver, correo, nivel)
@@ -186,7 +196,7 @@ def enviar_invitacion_cambridge_endpoint():
     except Exception as e:
         logging.error(f"❌ Error en /enviar_invitacion_cambridge: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500  
-
+    
 @app.route('/limpiar_sesion', methods=['POST'])
 def limpiar_sesion():
     global selenium_manager, correo_global, nivel_global, classKey_global  
