@@ -99,6 +99,45 @@ def buscar_estudiante_endpoint():
         logging.exception(f"❌ Error en /buscar_estudiante: {e}")
         return jsonify({"error": "Ocurrió un error interno."}), 500
 
+@app.route('/asignar_nivel', methods=['POST'])
+def asignar_nivel_endpoint():
+    """
+    Endpoint para asignar un nivel en Campus Virtual a un estudiante.
+    """
+    global selenium_manager, correo_global, nivel_global  
+
+    try:
+        data = request.json
+        logging.info(f"📩 Datos recibidos en /asignar_nivel: {data}")  
+
+        correo = data.get("correo")
+        nivel = data.get("nivel")
+
+        if not correo:
+            correo = correo_global  # Usa correo_global si el frontend no lo envió
+
+        if not correo or not nivel:
+            logging.warning(f"⚠️ Falta el correo o el nivel en la solicitud. Recibido: correo={correo}, nivel={nivel}")
+            return jsonify({"error": "Correo y nivel son requeridos."}), 400
+
+        logging.info(f"📌 Asignando nivel '{nivel}' al correo '{correo}'...")
+
+        # Iniciar o reutilizar la sesión Selenium
+        driver = selenium_manager.start_driver()
+
+        # Llamar a la función que asigna el nivel en el campus
+        resultado = asignar_nivel_campus(driver, correo, nivel)
+
+        # Guardar las variables globalmente
+        correo_global = correo  
+        nivel_global = nivel
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.error(f"❌ Error en /asignar_nivel: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/asignar_nivel_avanzado', methods=['POST'])
 def asignar_nivel_avanzado_endpoint():
     global selenium_manager, correo_global, nivel_global  
