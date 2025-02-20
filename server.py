@@ -104,20 +104,24 @@ def asignar_nivel_avanzado_endpoint():
     global selenium_manager, correo_global, nivel_global  
 
     try:
-        data = request.json  # ✅ Verifica que el request sea JSON
-        logging.info(f"📩 Datos recibidos en /asignar_nivel_avanzado: {data}")  # 🔍 Log de entrada
+        data = request.json
+        logging.info(f"📩 Datos recibidos en /asignar_nivel_avanzado: {data}")  
 
-        correo = data.get('correo', correo_global)
+        correo = data.get('correo')
+        if not correo:
+            logging.info(f"🔍 Revisando correo_global antes de usarlo: {correo_global}")
+            correo = correo_global  # ✅ Solo usa correo_global si el frontend no lo envió
+
         nivel = data.get('nivel')
 
         if not correo or not nivel:
-            logging.warning(f"⚠️ Datos incompletos en /asignar_nivel_avanzado. Recibido: correo={correo}, nivel={nivel}")
+            logging.warning(f"⚠️ Datos incompletos. Recibido: correo={correo}, nivel={nivel}")
             return jsonify({"error": "Correo y nivel son requeridos"}), 400
 
         logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}...")
 
         driver = selenium_manager.start_driver()
-        correo_global = correo
+        correo_global = correo  # ✅ Almacenamos el correo en la variable global
         nivel_global = nivel
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
@@ -127,7 +131,6 @@ def asignar_nivel_avanzado_endpoint():
     except Exception as e:
         logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
-    
 
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
