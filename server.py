@@ -101,28 +101,31 @@ def buscar_estudiante_endpoint():
 
 @app.route('/asignar_nivel_avanzado', methods=['POST'])
 def asignar_nivel_avanzado_endpoint():
-    global selenium_manager, correo_global, nivel_global
-    
+    global selenium_manager, correo_global, nivel_global  
+
     try:
-        data = request.json
+        data = request.json  # ✅ Verifica que el request sea JSON
+        logging.info(f"📩 Datos recibidos en /asignar_nivel_avanzado: {data}")  # 🔍 Log de entrada
+
         correo = data.get('correo', correo_global)
         nivel = data.get('nivel')
 
         if not correo or not nivel:
+            logging.warning(f"⚠️ Datos incompletos en /asignar_nivel_avanzado. Recibido: correo={correo}, nivel={nivel}")
             return jsonify({"error": "Correo y nivel son requeridos"}), 400
 
         logging.info(f"📌 Iniciando asignación avanzada para {correo} en nivel {nivel}...")
 
         driver = selenium_manager.start_driver()
-        nivel_global = nivel
         correo_global = correo
+        nivel_global = nivel
 
         resultado = asignar_nivel_avanzado(driver, correo, nivel)
-        
+
         return jsonify(resultado)
 
     except Exception as e:
-        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}")
+        logging.error(f"❌ Error en /asignar_nivel_avanzado: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
     
 
