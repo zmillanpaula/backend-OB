@@ -118,7 +118,7 @@ def asignar_nivel_endpoint():
         data = request.json
         logging.info(f"📩 Datos recibidos en /asignar_nivel: {data}")  
 
-        correo = temp_storage.get("email")  
+        correo = temp_storage.get("email") or data.get("correo")
         nivel = data.get("nivel")
 
         if not correo or not nivel:
