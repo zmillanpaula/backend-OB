@@ -91,3 +91,55 @@ def submit_form(payload):
     headers = {"Content-Type": "application/json"}
     response = requests.post("https://sedsa.activehosted.com/proc.php", headers=headers, json=payload)
     return response.status_code == 200
+
+def get_contact_with_details(email):
+    """
+    Obtiene los datos detallados del contacto en ActiveCampaign, incluyendo RUT, número de contrato,
+    meses y niveles contratados, sin afectar la función original `get_contact()`.
+    """
+    headers = {"Api-Token": API_KEY}
+    email = email.strip().lower()
+    
+    try:
+        # 1️⃣ Consultar el contacto por email
+        response = requests.get(f"{API_URL}/api/3/contacts", headers=headers, params={"email": email})
+        
+        if response.status_code != 200:
+            logging.error(f"Error en la consulta a ActiveCampaign: {response.text}")
+            return None
+
+        data = response.json()
+        if not data.get("contacts"):
+            logging.warning(f"No se encontró contacto con el correo: {email}")
+            return None
+
+        contacto = data["contacts"][0]
+
+        # 2️⃣ Obtener los valores personalizados (fieldValues)
+        field_values_link = contacto["links"].get("fieldValues")
+        field_values = []
+        if field_values_link:
+            field_values_response = requests.get(field_values_link, headers=headers)
+            if field_values_response.status_code == 200:
+                field_values = field_values_response.json().get("fieldValues", [])
+            else:
+                logging.warning(f"Error obteniendo fieldValues: {field_values_response.text}")
+
+        # 3️⃣ Extraer datos clave de fieldValues
+        def get_field_value(field_values, field_id):
+            """Busca un campo específico dentro de los fieldValues y devuelve su valor."""
+            return next((fv["value"] for fv in field_values if fv["field"] == field_id), None)
+
+        return {
+            "correo": email,
+            "rut": get_field_value(field_values, "36"),  # RUT
+            "nombre": contacto.get("firstName", "").strip(),
+            "apellido": contacto.get("lastName", "").strip(),
+            "numero_contrato": get_field_value(field_values, "205"),  # Número de contrato
+            "meses_contratados": int(get_field_value(field_values, "370") or 1),  # Meses contratados
+            "niveles_contratados": int(get_field_value(field_values, "184") or 1),  # Niveles contratados
+        }
+
+    except requests.RequestException as e:
+        logging.error(f"Error en la solicitud a ActiveCampaign: {e}")
+        return None

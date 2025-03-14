@@ -98,3 +98,7 @@ def asignar_nivel_campus(driver, correo, nivel):
     except Exception as e:
         logging.error(f"❌ Error en la asignación de nivel '{nivel}' para {correo}: {str(e)}", exc_info=True)
         return {"error": f"Error en asignación: {str(e)}"}
+
+    finally:
+        logging.info("Cerrando webdriver")
+        driver.quit()

@@ -116,3 +116,7 @@ def asignar_nivel_avanzado(driver, correo, nivel):
         logging.error(f"❌ Error general en la asignación avanzada: {e}")
         enviar_evento_sse(correo, f"❌ Error: {str(e)}")
         return {"error": str(e)}
+    
+    finally:
+        logging.info("Cerrando webdriver")
+        driver.quit()
