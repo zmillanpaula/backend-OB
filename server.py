@@ -140,6 +140,36 @@ def asignar_nivel_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/asignar_nivel_avanzado', methods=['POST'])
+def asignar_nivel_avanzado_endpoint():
+    global selenium_manager, temp_storage  
+
+    try:
+        data = request.json
+        logging.info(f"📩 Datos recibidos en /asignar_nivel_avanzado: {data}")  
+
+        correo = temp_storage.get("email")  
+        nivel = data.get("nivel")
+
+        if not correo or not nivel:
+            return jsonify({"error": "Correo y nivel son requeridos."}), 400
+
+        driver = selenium_manager.start_driver()
+        resultado = asignar_nivel_avanzado(driver, correo, nivel)
+
+        if "error" in resultado:
+            return jsonify(resultado), 400
+
+        # 🔹 Guardamos el nivel asignado
+        temp_storage["nivel"] = nivel  
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        logging.exception(f"❌ Error en /asignar_nivel_avanzado: {e}")
+        return jsonify({"error": "Ocurrió un error interno."}), 500
+
+
 # 📌 🔹 **Endpoint para obtener licencia**
 @app.route('/obtener_licencia', methods=['POST'])
 def obtener_licencia():
